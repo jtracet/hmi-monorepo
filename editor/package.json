@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npm run build:test && node --test dist-tests/**/*.test.js",
+    "build:test": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "autoprefixer": "^10.4.21",

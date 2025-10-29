@@ -1,5 +1,5 @@
 import {fabric} from 'fabric'
-import {BaseElement} from './BaseElement'
+import {BaseElement, type ElementMeta} from './BaseElement'
 
 export interface ImageProps {
     src: string
@@ -7,9 +7,7 @@ export interface ImageProps {
 
 export class ImageElement extends BaseElement<ImageProps> {
     static elementType = 'image'
-    static meta = {inputs: [], outputs: []} as const
-
-    private img?: fabric.Image
+    static meta = {inputs: [], outputs: []} satisfies ElementMeta
 
     constructor(
         canvas: fabric.Canvas,
@@ -22,7 +20,6 @@ export class ImageElement extends BaseElement<ImageProps> {
         fabric.Image.fromURL(
             props.src,
             (img) => {
-                this.img = img
                 this.addWithUpdate(img)
                 this.canvas?.requestRenderAll()
             },

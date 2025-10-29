@@ -1,5 +1,5 @@
 import { fabric } from 'fabric'
-import { BaseElement } from './BaseElement'
+import { BaseElement, type ElementMeta } from './BaseElement'
 
 interface NumDisplayProps {
     fontSize:  number
@@ -8,7 +8,7 @@ interface NumDisplayProps {
 
 export class NumberDisplay extends BaseElement<NumDisplayProps> {
     static elementType = 'numDisplay'
-    static meta        = { inputs: ['value'], outputs: [] } as const
+    static meta        = { inputs: ['value'], outputs: [] } satisfies ElementMeta
 
     private txt: fabric.Text
 

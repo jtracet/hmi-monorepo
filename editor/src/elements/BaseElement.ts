@@ -12,12 +12,11 @@ interface SavedBindings {
 }
 
 export abstract class BaseElement<
-    TProps = Record<string, any>,
-    TMeta extends ElementMeta = ElementMeta
+    TProps = Record<string, any>
 > extends fabric.Group {
 
     static elementType: string
-    static meta: TMeta
+    static meta: ElementMeta
 
     customProps!: TProps
     bindings: SavedBindings = {inputs: {}, outputs: {}}

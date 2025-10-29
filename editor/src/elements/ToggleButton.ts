@@ -1,5 +1,5 @@
 import {fabric} from 'fabric'
-import {BaseElement} from './BaseElement'
+import {BaseElement, type ElementMeta} from './BaseElement'
 
 interface BtnProps {
     label: string
@@ -7,7 +7,7 @@ interface BtnProps {
 
 export class ToggleButton extends BaseElement<BtnProps> {
     static elementType = 'toggle'
-    static meta = {inputs: [], outputs: ['state']} as const
+    static meta = {inputs: [], outputs: ['state']} satisfies ElementMeta
 
     private rect: fabric.Rect
     private txt: fabric.Text
@@ -36,5 +36,13 @@ export class ToggleButton extends BaseElement<BtnProps> {
         const bg = this._state ? '#1C3760FF' : '#3b82f6'
         this.rect.set('fill', bg)
         this.canvas?.requestRenderAll()
+    }
+
+    private emitState() {
+        this.canvas?.fire('element:output', {
+            target: this,
+            name: 'state',
+            value: this._state,
+        })
     }
 }

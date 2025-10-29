@@ -1,5 +1,5 @@
 import {fabric} from 'fabric'
-import {BaseElement} from './BaseElement'
+import {BaseElement, type ElementMeta} from './BaseElement'
 
 interface LedProps {
     onColor: string;
@@ -8,7 +8,7 @@ interface LedProps {
 
 export class LedIndicator extends BaseElement<LedProps> {
     static elementType = 'led'
-    static meta = {inputs: ['value'], outputs: []} as const
+    static meta = {inputs: ['value'], outputs: ['value']} satisfies ElementMeta
 
     private circle: fabric.Circle
     private _state = false
@@ -37,5 +37,13 @@ export class LedIndicator extends BaseElement<LedProps> {
     setState({value}: { value?: boolean }) {
         this._state = !!value
         this.updateFromProps()
+    }
+
+    private emitState() {
+        this.canvas?.fire('element:output', {
+            target: this,
+            name: 'value',
+            value: this._state,
+        })
     }
 }

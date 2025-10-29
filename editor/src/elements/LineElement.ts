@@ -1,5 +1,5 @@
 import { fabric } from 'fabric'
-import { BaseElement } from './BaseElement'
+import { BaseElement, type ElementMeta } from './BaseElement'
 
 interface LineProps {
     stroke: string
@@ -8,7 +8,7 @@ interface LineProps {
 
 export class LineElement extends BaseElement<LineProps> {
     static elementType = 'line'
-    static meta = { inputs: [], outputs: [] } as const
+    static meta = { inputs: [], outputs: [] } satisfies ElementMeta
 
     private line: fabric.Line
 

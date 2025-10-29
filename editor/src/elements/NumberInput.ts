@@ -1,5 +1,5 @@
 import { fabric } from 'fabric'
-import { BaseElement } from './BaseElement'
+import { BaseElement, type ElementMeta } from './BaseElement'
 
 interface NumInputProps {
     value:    number
@@ -8,7 +8,7 @@ interface NumInputProps {
 
 export class NumberInput extends BaseElement<NumInputProps> {
     static elementType = 'numInput'
-    static meta        = { inputs: [], outputs: ['value'] } as const
+    static meta        = { inputs: [], outputs: ['value'] } satisfies ElementMeta
 
     private txt:    fabric.Text
     private _value: number

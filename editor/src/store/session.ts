@@ -48,14 +48,14 @@ export const useSessionStore = defineStore('session', {
         backendInputs(state) {
             return {
                 /* ───── PLC ───── */
-                ...flattenObject(state.plc.inputs,        'outputs.inputs'),
-                ...flattenObject(state.plc.global_inputs, 'outputs.global_inputs'),
-                ...flattenObject(state.plc.global_vars,   'outputs.global_vars'),
+                ...flattenObject(state.plc.inputs ?? {},        'outputs.inputs'),
+                ...flattenObject(state.plc.global_inputs ?? {}, 'outputs.global_inputs'),
+                ...flattenObject(state.plc.global_vars ?? {},   'outputs.global_vars'),
 
                 /* ──── PLANT ──── */
-                ...flattenObject(state.plant.inputs,        'plant_outputs.inputs'),
-                ...flattenObject(state.plant.global_inputs, 'plant_outputs.global_inputs'),
-                ...flattenObject(state.plant.global_vars,   'plant_outputs.global_vars'),
+                ...flattenObject(state.plant.inputs ?? {},        'plant_outputs.inputs'),
+                ...flattenObject(state.plant.global_inputs ?? {}, 'plant_outputs.global_inputs'),
+                ...flattenObject(state.plant.global_vars ?? {},   'plant_outputs.global_vars'),
             }
         },
         backendOutputs(state) {

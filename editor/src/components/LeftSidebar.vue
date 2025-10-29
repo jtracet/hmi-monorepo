@@ -27,7 +27,7 @@
     <n-button block secondary size="small" class="mb-2" @click="doSave">
       Сохранить (JSON)
     </n-button>
-    <n-button block tertiary size="small" @click="fileInp.click()">
+    <n-button block tertiary size="small" @click="openFileDialog">
       Загрузить...
     </n-button>
     <input
@@ -43,9 +43,11 @@
 <script setup lang="ts">
 import {ref, computed} from 'vue'
 import {NButton} from 'naive-ui'
+import {fabric} from 'fabric'
 import {useCanvas} from '../composables/useCanvas'
 import {ElementRegistry} from '../elements'
 import {useEditorStore} from '../store/editor'
+import {useCanvasStore} from '../store/canvas'
 
 const editor = useEditorStore()
 const mode = computed({
@@ -54,24 +56,35 @@ const mode = computed({
 })
 
 const {canvas} = useCanvas()
+const canvasStore = useCanvasStore()
 
 const palette = Object.entries(ElementRegistry).map(([key, ctor]) => ({
   key,
   label: (ctor as any).elementType || key
 }))
 
-const fileInp = ref<HTMLInputElement>()
+const fileInp = ref<HTMLInputElement | null>(null)
+
+function openFileDialog() {
+  fileInp.value?.click()
+}
 
 function doSave() {
   if (!canvas.value) return
   const hmi = {
     meta: {version: '1.0', created: new Date().toISOString()},
     canvas: canvas.value.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta']),
-    bindings: canvas.value.getObjects().map(o => ({
+    bindings: canvas.value.getObjects().map((o: fabric.Object & {id?: string; bindings?: any}) => ({
       elementId: o.id,
       inputBindings: o.bindings?.inputs ?? {},
       outputBindings: o.bindings?.outputs ?? {},
-    }))
+    })),
+    view: canvasStore.serializeView(),
+    grid: {
+      showGrid: canvasStore.grid.showGrid,
+      snapToGrid: canvasStore.grid.snapToGrid,
+      showGuides: canvasStore.grid.showGuides,
+    },
   }
   const blob = new Blob([JSON.stringify(hmi, null, 2)], {type: 'application/json'})
   const a = document.createElement('a')
@@ -85,11 +98,23 @@ function onFile(e: Event) {
   if (!f || !canvas.value) return
   f.text().then(text => {
     const json = JSON.parse(text)
-    canvas.value.clear()
-    fabric.util.enlivenObjects(json.canvas.objects, objs => {
-      objs.forEach(o => canvas.value!.add(o))
-      canvas.value!.renderAll()
-    })
+    const currentCanvas = canvas.value
+    if (!currentCanvas) return
+    currentCanvas.clear()
+    fabric.util.enlivenObjects(json.canvas.objects ?? [], (objs: fabric.Object[]) => {
+      objs.forEach(obj => currentCanvas.add(obj))
+      currentCanvas.renderAll()
+      if (json.view) {
+        canvasStore.setViewportTransform(json.view)
+      }
+      if (json.grid) {
+        canvasStore.setGridState({
+          showGrid: Boolean(json.grid.showGrid),
+          snapToGrid: Boolean(json.grid.snapToGrid),
+          showGuides: Boolean(json.grid.showGuides),
+        })
+      }
+    }, 'fabric')
   })
 }
 </script>

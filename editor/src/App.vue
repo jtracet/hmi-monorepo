@@ -10,14 +10,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import LeftSidebar from './components/LeftSidebar.vue'
 import CanvasComponent from './components/CanvasComponent.vue'
 import RightSidebar from './components/RightSidebar.vue'
 import TopToolbar from './components/TopToolbar.vue'
 import { useCanvasStore } from './store/canvas'
-import { storeToRefs } from 'pinia'
 
 const store = useCanvasStore()
-const { selectedObject } = storeToRefs(store)
+const selectedObject = computed(() => store.selection.selectedObject)
 </script>

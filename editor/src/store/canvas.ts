@@ -27,6 +27,7 @@ interface SelectionState {
     hasText: boolean
     hasMultiple: boolean
     activeType: string | null
+    selectedObject: fabric.Object | null
 }
 
 const DEFAULT_SECTIONS: OperationSectionId[] = ['text', 'align', 'distribute', 'resize', 'grouping', 'grid', 'zoom']
@@ -59,7 +60,7 @@ export const useCanvasStore = defineStore('canvas', {
     state: () => ({
         view: {...defaultView} as ViewportState,
         viewportSize: {width: 0, height: 0},
-        selection: {count: 0, hasText: false, hasMultiple: false, activeType: null} as SelectionState,
+        selection: {count: 0, hasText: false, hasMultiple: false, activeType: null, selectedObject: null} as SelectionState,
         operations: loadOperationsState(),
         grid: {showGrid: false, snapToGrid: false, showGuides: false, size: 20} as GridState,
     }),
@@ -71,6 +72,7 @@ export const useCanvasStore = defineStore('canvas', {
             this.selection.count = objs.length
             this.selection.hasMultiple = objs.length > 1
             this.selection.activeType = objs[0]?.type ?? null
+            this.selection.selectedObject = objs[0] ?? null
             this.selection.hasText = objs.some(obj => obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')
         },
         setView(partial: Partial<ViewportState>) {

@@ -59,7 +59,6 @@ export interface SectionDefinition {
 }
 
 export const SECTIONS: SectionDefinition[] = [
-    {id: 'text', title: 'Text Settings'},
     {id: 'align', title: 'Align'},
     {id: 'distribute', title: 'Distribute'},
     {id: 'resize', title: 'Resize'},

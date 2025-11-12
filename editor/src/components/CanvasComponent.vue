@@ -321,7 +321,12 @@ function applyViewFromStore(view: {zoom: number; offsetX: number; offsetY: numbe
 }
 
 onMounted(() => {
-    canvas = new fabric.Canvas(cnv.value!, {selection: true})
+    canvas = new fabric.Canvas(cnv.value!, {
+        selection: true,
+        selectionColor: 'rgba(99, 102, 241, 0.1)',
+        selectionBorderColor: 'rgba(99, 102, 241, 0.6)',
+        selectionLineWidth: 2
+    })
     setCanvas(canvas)
     applyViewFromStore(canvasStore.view)
     canvasStore.setViewportSize(canvas.getWidth(), canvas.getHeight())

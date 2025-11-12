@@ -4,7 +4,7 @@ import {commitCanvasChange, getActiveSelection, getBoundingRect, withCanvas} fro
 function distribute(mode: 'horizontal' | 'vertical', strategy: 'center' | 'space') {
     return withCanvas(canvas => {
         const {objects} = getActiveSelection(canvas)
-        if (objects.length < 3) return false
+        if (objects.length < 2) return false
 
         const rects = objects.map(obj => ({obj, rect: getBoundingRect(obj)}))
         const sorted = rects.sort((a, b) =>
@@ -69,7 +69,7 @@ function distribute(mode: 'horizontal' | 'vertical', strategy: 'center' | 'space
     })
 }
 
-const enabled = () => withCanvas(canvas => getActiveSelection(canvas).objects.length >= 3)
+const enabled = () => withCanvas(canvas => getActiveSelection(canvas).objects.length >= 2)
 
 export const distributeCommands: CommandDefinition[] = [
     {

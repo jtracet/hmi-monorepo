@@ -4,14 +4,20 @@
     <div class="flex flex-1 overflow-hidden">
       <LeftSidebar class="flex-shrink-0" />
       <CanvasComponent class="flex-1" />
-      <SidebarOperations class="flex-shrink-0" />
+      <RightSidebar :selected="selectedObject" class="flex-shrink-0" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import LeftSidebar from './components/LeftSidebar.vue'
 import CanvasComponent from './components/CanvasComponent.vue'
-import SidebarOperations from './components/operations/SidebarOperations.vue'
+import RightSidebar from './components/RightSidebar.vue'
 import TopToolbar from './components/TopToolbar.vue'
+import { useCanvasStore } from './store/canvas'
+import { storeToRefs } from 'pinia'
+
+const store = useCanvasStore()
+const { selectedObject } = storeToRefs(store)
 </script>

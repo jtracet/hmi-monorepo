@@ -1,13 +1,12 @@
 <template>
   <header class="border-b border-gray-200 bg-white px-4 py-2 shadow-sm">
-    <div class="flex items-start gap-4 overflow-x-auto pb-1">
+    <div class="flex items-start gap-6 overflow-x-auto">
       <div
           v-for="section in sections"
           :key="section.id"
-          class="flex items-center gap-2"
+          class="flex flex-col items-center gap-1"
       >
-        <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 whitespace-nowrap">{{ section.title }}</span>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1">
           <OpButton
               v-for="cmd in commandsBySection(section.id)"
               :key="cmd.id"
@@ -16,8 +15,10 @@
               :active="isCommandHighlighted(section.id, cmd)"
               layout="horizontal"
               :stretch="false"
+              :compact="true"
           />
         </div>
+        <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-500 whitespace-nowrap">{{ section.title }}</span>
       </div>
     </div>
   </header>

@@ -30,7 +30,7 @@ export const groupingCommands: CommandDefinition[] = [
         run: () => withCanvas(canvas => {
             const active = canvas.getActiveObject()
             if (!active || active.type !== 'group') return false
-            ;(active as fabric.Group).toActiveSelection()
+                ;(active as fabric.Group).toActiveSelection()
             commitCanvasChange(canvas)
             return true
         }),

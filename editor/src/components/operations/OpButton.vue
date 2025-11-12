@@ -4,15 +4,15 @@
       :class="[
         stretch ? 'w-full' : 'w-auto',
         active ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : '',
-        isVertical ? 'flex flex-col items-center gap-1 px-2 py-2' : 'flex items-center gap-2 px-3 py-2'
+        isCompact ? 'flex items-center justify-center p-1.5' : (isVertical ? 'flex flex-col items-center gap-1 px-2 py-2' : 'flex items-center gap-2 px-3 py-2')
       ]"
       :title="tooltip"
       :aria-label="ariaLabel"
       :disabled="disabled"
       @click="trigger"
   >
-    <IconRenderer :icon="iconName" :class="isVertical ? 'h-5 w-5' : 'h-4 w-4 flex-shrink-0'" />
-    <div :class="isVertical ? 'flex flex-col items-center text-center leading-tight' : 'flex flex-col text-left leading-tight'">
+    <IconRenderer :icon="iconName" :class="isCompact ? 'h-5 w-5' : (isVertical ? 'h-5 w-5' : 'h-4 w-4 flex-shrink-0')" />
+    <div v-if="!isCompact" :class="isVertical ? 'flex flex-col items-center text-center leading-tight' : 'flex flex-col text-left leading-tight'">
       <span>{{ label }}</span>
       <span v-if="hotkey" class="text-[10px] uppercase tracking-wide text-gray-400">{{ hotkey }}</span>
     </div>
@@ -32,6 +32,7 @@ const props = defineProps<{
   active?: boolean
   layout?: 'vertical' | 'horizontal'
   stretch?: boolean
+  compact?: boolean
 }>()
 
 const command = computed(() => getCommand(props.commandId))
@@ -46,6 +47,7 @@ const disabled = computed(() => props.disabled ?? false)
 const active = computed(() => props.active ?? false)
 const isVertical = computed(() => (props.layout ?? 'vertical') === 'vertical')
 const stretch = computed(() => props.stretch ?? true)
+const isCompact = computed(() => props.compact ?? false)
 
 function trigger() {
   if (disabled.value) return

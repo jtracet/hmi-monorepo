@@ -18,24 +18,24 @@ function align(mode: 'left' | 'right' | 'center' | 'top' | 'bottom' | 'middle'):
             let dx = 0
             let dy = 0
             switch (mode) {
-            case 'left':
-                dx = minX - rect.left
-                break
-            case 'right':
-                dx = maxX - (rect.left + rect.width)
-                break
-            case 'center':
-                dx = centerX - (rect.left + rect.width / 2)
-                break
-            case 'top':
-                dy = minY - rect.top
-                break
-            case 'bottom':
-                dy = maxY - (rect.top + rect.height)
-                break
-            case 'middle':
-                dy = centerY - (rect.top + rect.height / 2)
-                break
+                case 'left':
+                    dx = minX - rect.left
+                    break
+                case 'right':
+                    dx = maxX - (rect.left + rect.width)
+                    break
+                case 'center':
+                    dx = centerX - (rect.left + rect.width / 2)
+                    break
+                case 'top':
+                    dy = minY - rect.top
+                    break
+                case 'bottom':
+                    dy = maxY - (rect.top + rect.height)
+                    break
+                case 'middle':
+                    dy = centerY - (rect.top + rect.height / 2)
+                    break
             }
             obj.set({
                 left: (obj.left ?? 0) + dx,

@@ -1,48 +1,114 @@
-import {fabric} from 'fabric'
-import {BaseElement} from './BaseElement'
+import { fabric } from 'fabric'
+import { BaseElement } from './BaseElement'
 
-interface BtnProps {
+interface ToggleProps {
     label: string
+    labelFontSize: number   
 }
 
-export class ToggleButton extends BaseElement<BtnProps> {
+export class ToggleButton extends BaseElement<ToggleProps> {
     static elementType = 'toggle'
-    static meta = {inputs: [], outputs: ['state']} as const
+    static category = 'controls'
+    static meta = { inputs: [], outputs: [] } as const  
 
-    private rect: fabric.Rect
-    private txt: fabric.Text
+    private background: fabric.Rect
+    private slider: fabric.Rect
     private _state = false
+    private lastClickTime = 0
 
     constructor(canvas: fabric.Canvas, x: number, y: number) {
-        const props = {label: 'Toggle'}
-        const rect = new fabric.Rect({width: 90, height: 34, rx: 6, ry: 6, fill: '#3b82f6'})
-        const text = new fabric.Text(props.label, {fontSize: 14, fill: '#fff', originX: 'center', originY: 'center'})
-        text.top = rect.height! / 2
-        text.left = rect.width! / 2
-        super(canvas, x, y, [rect, text], props)
+        const props: ToggleProps = { 
+            label: 'Slide Switch',
+            labelFontSize: 14       
+        }
 
-        this.rect = rect;
-        this.txt = text
-
-        this.on('mouseup', () => {
-            this._state = !this._state
-            this.rect.set('fill', this._state ? '#2563eb' : '#3b82f6')
-            this.canvas?.requestRenderAll()
-            this.emitState()
+        const background = new fabric.Rect({
+            width: 60,
+            height: 30,
+            rx: 15,
+            ry: 15,
+            fill: '#d1d5db',
+            originX: 'center',
+            originY: 'center',
+            selectable: false,
+            evented: false   
         })
+
+        const slider = new fabric.Rect({
+            width: 26,
+            height: 26,
+            rx: 13,
+            ry: 13,
+            fill: '#fff',
+            left: -15,
+            originX: 'center',
+            originY: 'center',
+            selectable: false,
+            evented: false  
+        })
+
+        super(canvas, x, y, [background, slider], props)
+
+        this.background = background
+        this.slider = slider
+
+        this.label.set({
+            text: props.label,
+            fontSize: props.labelFontSize  
+        })
+
+        this.on('mouseup', this.handleClick.bind(this))
+
+        this.updateVisuals()
     }
 
-    updateFromProps() {
-        this.txt.text = this.customProps.label ?? 'Toggle'
+    private handleClick(e: fabric.IEvent) {
 
-        const bg = this._state ? '#1C3760FF' : '#3b82f6'
-        this.rect.set('fill', bg)
+        const now = Date.now()
+        if (now - this.lastClickTime < 250) {
+            this.lastClickTime = now
+            return
+        }
+
+        this.lastClickTime = now
+        this.toggleState()
+
+        e.stopPropagation()
+    }
+
+    public toggleState() {
+        this._state = !this._state
+        this.updateVisuals()
+    }
+
+    public getState(): boolean {
+        return this._state
+    }
+
+    private updateVisuals() {
+        const targetX = this._state ? 12 : -12
+        const bgColor = this._state ? '#3b82f6' : '#d1d5db'
+
+        this.label.set({
+            text: this.customProps.label,
+            fontSize: this.customProps.labelFontSize  
+        })
+
+        this.background.set({
+            fill: bgColor,
+            dirty: true
+        })
+
+        this.slider.animate('left', targetX, {
+            duration: 150,
+            onChange: () => this.canvas?.requestRenderAll(),
+        })
 
         this.canvas?.requestRenderAll()
     }
 
 
-    private emitState() {
-        this.canvas?.fire('element:output', {target: this, name: 'state', value: this._state})
+    updateFromProps() {
+        this.updateVisuals()
     }
 }

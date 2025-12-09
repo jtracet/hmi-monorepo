@@ -7,7 +7,7 @@ interface LineProps {
 }
 
 export class LineElement extends BaseElement<LineProps> {
-    static elementType = 'Line'
+    static elementType = 'line'
     static category = 'decorations'
     static meta = { inputs: [], outputs: [] } satisfies ElementMeta
 

@@ -9,7 +9,7 @@ interface LedProps {
 }
 
 export class LedIndicator extends BaseElement<LedProps> {
-    static elementType = 'Led Indicator'
+    static elementType = 'led'
     static category = 'indicators'
     static meta = { inputs: ['value'], outputs: ['value'] } satisfies ElementMeta
 

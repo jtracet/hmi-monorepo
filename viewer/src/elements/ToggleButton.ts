@@ -9,7 +9,7 @@ interface ToggleProps {
 export class ToggleButton extends BaseElement<ToggleProps> {
     static elementType = 'toggle'
     static category = 'controls'
-    static meta = { inputs: [], outputs: [] } as const  
+    static meta = { inputs: [], outputs: ['state'] } as const
 
     private background: fabric.Rect
     private slider: fabric.Rect
@@ -57,28 +57,22 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             fontSize: props.labelFontSize  
         })
 
-        this.on('mouseup', this.handleClick.bind(this))
+        this.on('mouseup', () => {
+            const now = Date.now()
+            if (now - this.lastClickTime < 250) {
+                return
+            }
+            this.lastClickTime = now
+            this.toggleState()
+        })
 
         this.updateVisuals()
-    }
-
-    private handleClick(e: fabric.IEvent) {
-
-        const now = Date.now()
-        if (now - this.lastClickTime < 250) {
-            this.lastClickTime = now
-            return
-        }
-
-        this.lastClickTime = now
-        this.toggleState()
-
-        e.stopPropagation()
     }
 
     public toggleState() {
         this._state = !this._state
         this.updateVisuals()
+        this.emitState()
     }
 
     public getState(): boolean {
@@ -107,6 +101,13 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.canvas?.requestRenderAll()
     }
 
+    private emitState() {
+        this.canvas?.fire('element:output', {
+            target: this,
+            name: 'state',
+            value: this._state
+        })
+    }
 
     updateFromProps() {
         this.updateVisuals()

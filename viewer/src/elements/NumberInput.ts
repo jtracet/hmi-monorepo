@@ -11,7 +11,7 @@ interface NumInputProps {
 export class NumberInput extends BaseElement<NumInputProps> {
   static elementType = 'numInput'
   static category = 'controls'
-  static meta = { inputs: [], outputs: [] } as const  
+  static meta = { inputs: [], outputs: ['value'] } as const
 
   private txt: fabric.Text
   private border: fabric.Rect
@@ -74,7 +74,6 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this._value = p.value
 
     this.on('mouseup', () => {
-
       const res = prompt('Введите число (макс. 6 цифр)', String(this._value))
       if (res == null) return
 
@@ -87,13 +86,12 @@ export class NumberInput extends BaseElement<NumInputProps> {
       if (!Number.isFinite(n)) return
 
       this._value = n
-      this.updateFromProps()
+      this.updateDisplay()  
+      this.emitState()
     })
   }
 
-  updateFromProps() {
-    this._value = this.customProps.value
-
+  private updateDisplay() {
     let displayValue = String(this._value)
     if (displayValue.length > 6) {
       displayValue = displayValue.slice(0, 6)
@@ -113,4 +111,16 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.canvas?.requestRenderAll()
   }
 
+  updateFromProps() {
+    this._value = this.customProps.value
+    this.updateDisplay() 
+  }
+
+  private emitState() {
+    this.canvas?.fire('element:output', {
+      target: this,
+      name: 'value',
+      value: this._value
+    })
+  }
 }

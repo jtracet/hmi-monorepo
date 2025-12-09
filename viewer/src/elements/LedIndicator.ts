@@ -11,7 +11,7 @@ interface LedProps {
 export class LedIndicator extends BaseElement<LedProps> {
     static elementType = 'led'
     static category = 'indicators'
-    static meta = { inputs: ['value'], outputs: [] } as const
+    static meta = { inputs: ['value'], outputs: ['value'] } as const  
 
     private circle: fabric.Circle
     private _state = false
@@ -44,6 +44,7 @@ export class LedIndicator extends BaseElement<LedProps> {
         this.on('mouseup', () => {
             this._state = !this._state
             this.updateFromProps()
+            this.emitState()  
         })
     }
 
@@ -65,4 +66,11 @@ export class LedIndicator extends BaseElement<LedProps> {
         this.updateFromProps()
     }
     
+    private emitState() {
+        this.canvas?.fire('element:output', {
+            target: this,
+            name: 'value',
+            value: this._state
+        })
+    }
 }

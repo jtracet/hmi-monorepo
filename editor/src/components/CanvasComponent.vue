@@ -32,6 +32,10 @@ let isDragging = false
 let lastPos = {x: 0, y: 0}
 let applyingViewFromStore = false
 
+let isSelecting = false
+let selectionStart = { x: 0, y: 0 }
+let selectionRect: fabric.Rect | null = null
+
 const undoStack: string[] = []
 const redoStack: string[] = []
 let clipboard: fabric.Object[] = []
@@ -115,11 +119,42 @@ function onSpaceUp(e: KeyboardEvent) {
 }
 
 function onMouseDown(e: MouseEvent) {
-    if (!isPanning) return
-    isDragging = true
-    canvas.defaultCursor = 'grabbing'
-    lastPos = {x: e.clientX, y: e.clientY}
-    e.preventDefault()
+    if (isPanning) {
+        isDragging = true
+        canvas.defaultCursor = 'grabbing'
+        lastPos = {x: e.clientX, y: e.clientY}
+        e.preventDefault()
+        return
+    }
+    
+    // ЕСЛИ УЖЕ ЕСТЬ ВЫБРАННЫЕ ОБЪЕКТЫ - НЕ НАЧИНАЕМ ВЫДЕЛЕНИЕ
+    const activeObjects = canvas.getActiveObjects()
+    if (activeObjects && activeObjects.length > 0) {
+        return
+    }
+    
+    // Если не зажат Space и не панорамируем - начинаем выделение
+    const pointer = canvas.getPointer(e as unknown as MouseEvent)
+    selectionStart = { x: pointer.x, y: pointer.y }
+    isSelecting = true
+    
+    // Создаем прямоугольник выделения
+    selectionRect = new fabric.Rect({
+        left: selectionStart.x,
+        top: selectionStart.y,
+        width: 0,
+        height: 0,
+        fill: 'rgba(99, 102, 241, 0.1)',
+        stroke: 'rgba(99, 102, 241, 0.6)',
+        strokeWidth: 2,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        absolutePositioned: true
+    })
+    
+    canvas.add(selectionRect)
+    canvas.selection = false // временно отключаем стандартное выделение
 }
 
 function syncViewToStore() {
@@ -172,23 +207,85 @@ function drawGuides() {
 }
 
 function onMouseMove(e: MouseEvent) {
-    if (!isPanning || !isDragging) return
-    const vpt = canvas.viewportTransform!
-    const dx = e.clientX - lastPos.x
-    const dy = e.clientY - lastPos.y
-    const zoom = canvas.getZoom()
-    vpt[4] += dx * zoom
-    vpt[5] += dy * zoom
-    lastPos = {x: e.clientX, y: e.clientY}
-    canvas.requestRenderAll()
-    syncViewToStore()
-    updateGridBackground()
+    if (isPanning && isDragging) {
+        const vpt = canvas.viewportTransform!
+        const dx = e.clientX - lastPos.x
+        const dy = e.clientY - lastPos.y
+        const zoom = canvas.getZoom()
+        vpt[4] += dx * zoom
+        vpt[5] += dy * zoom
+        lastPos = {x: e.clientX, y: e.clientY}
+        canvas.requestRenderAll()
+        syncViewToStore()
+        updateGridBackground()
+        return
+    }
+    
+    if (isSelecting && selectionRect) {
+        const pointer = canvas.getPointer(e as unknown as MouseEvent)
+        const left = Math.min(selectionStart.x, pointer.x)
+        const top = Math.min(selectionStart.y, pointer.y)
+        const width = Math.abs(pointer.x - selectionStart.x)
+        const height = Math.abs(pointer.y - selectionStart.y)
+        
+        selectionRect.set({
+            left,
+            top,
+            width,
+            height
+        })
+        selectionRect.setCoords()
+        canvas.requestRenderAll()
+    }
 }
 
 function onMouseUp() {
-    if (!isPanning) return
-    isDragging = false
-    canvas.defaultCursor = 'grab'
+    if (isPanning) {
+        isDragging = false
+        canvas.defaultCursor = 'grab'
+        return
+    }
+    
+    if (isSelecting && selectionRect) {
+        // Завершаем выделение
+        const pointer = canvas.getPointer(event as unknown as MouseEvent)
+        const left = Math.min(selectionStart.x, pointer.x)
+        const top = Math.min(selectionStart.y, pointer.y)
+        const width = Math.abs(pointer.x - selectionStart.x)
+        const height = Math.abs(pointer.y - selectionStart.y)
+        
+        // Если область выделения достаточно большая
+        if (width > 5 && height > 5) {
+            const selectionArea = new fabric.Rect({
+                left,
+                top,
+                width,
+                height,
+                absolutePositioned: true
+            })
+            
+            // Выделяем объекты, попадающие в область
+            const objects = canvas.getObjects().filter(obj => {
+                if (obj === selectionRect || obj === selectionArea) return false
+                return obj.intersectsWithObject(selectionArea) || 
+                       obj.isContainedWithinObject(selectionArea) ||
+                       selectionArea.isContainedWithinObject(obj)
+            })
+            
+            if (objects.length > 0) {
+                const selection = new fabric.ActiveSelection(objects, { canvas: canvas })
+                canvas.setActiveObject(selection)
+                updateSelection()
+            }
+        }
+        
+        // Убираем прямоугольник выделения
+        canvas.remove(selectionRect)
+        selectionRect = null
+        isSelecting = false
+        canvas.selection = true // возвращаем стандартное выделение
+        canvas.requestRenderAll()
+    }
 }
 
 function handleDrop(e: DragEvent) {
@@ -273,11 +370,27 @@ function handleObjectMoving(e: fabric.IEvent<Event>) {
 
 function handleKey(e: KeyboardEvent) {
     if (!canvas || e.code === 'Space') return
+
+    
     const mod = e.ctrlKey || e.metaKey
     const shift = e.shiftKey
 
-    if (e.code === 'Delete' || e.code === 'Backspace') {
+    if (e.code === 'Delete') {
         deleteSelection()
+        e.preventDefault()
+        return
+    }
+    if (e.code === 'Escape') {
+        if (isSelecting && selectionRect) {
+            canvas.remove(selectionRect)
+            selectionRect = null
+            isSelecting = false
+            canvas.selection = true
+            canvas.requestRenderAll()
+        } else {
+            canvas.discardActiveObject()
+            updateSelection()
+        }
         e.preventDefault()
         return
     }

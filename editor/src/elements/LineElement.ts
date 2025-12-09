@@ -7,7 +7,8 @@ interface LineProps {
 }
 
 export class LineElement extends BaseElement<LineProps> {
-    static elementType = 'line'
+    static elementType = 'Line'
+    static category = 'decorations'
     static meta = { inputs: [], outputs: [] } satisfies ElementMeta
 
     private line: fabric.Line
@@ -21,7 +22,60 @@ export class LineElement extends BaseElement<LineProps> {
             strokeLineCap: 'round'
         })
         super(canvas, x, y, [l], p)
+        
+        this.label.set({
+            text: '',
+            visible: false
+        })
+        
         this.line = l
+        
+        this.setupLineControls()
+        
+        this.on('mousedblclick', this.handleDoubleClick.bind(this))
+        this.on('deselected', this.handleDeselected.bind(this))
+    }
+
+
+    private setupLineControls() {
+        this.set({
+            hasRotatingPoint: true,
+            lockRotation: false
+        })
+
+        this.setControlsVisibility({
+            tl: false, // верхний левый
+            tr: false, // верхний правый  
+            bl: false, // нижний левый
+            br: false, // нижний правый
+            ml: true,  // средний левый - РАБОТАЕТ
+            mr: true,  // средний правый - РАБОТАЕТ
+            mt: false, // верхний средний
+            mb: false, // нижний средний
+            mtr: true  // контрол вращения - РАБОТАЕТ
+        })
+
+        this.lockScalingY = true
+        
+        this.lockScalingX = false
+    }
+
+    private handleDoubleClick() {
+        this.set({
+            hasControls: true,
+            lockScalingX: false,
+            lockScalingY: true,
+            lockRotation: false
+        })
+        this.setupLineControls() 
+        this.canvas?.requestRenderAll()
+    }
+
+    private handleDeselected() {
+        this.set({
+            hasControls: false
+        })
+        this.canvas?.requestRenderAll()
     }
 
     updateFromProps() {
@@ -29,5 +83,6 @@ export class LineElement extends BaseElement<LineProps> {
             stroke: this.customProps.stroke,
             strokeWidth: this.customProps.strokeWidth
         })
+        this.canvas?.requestRenderAll()
     }
 }

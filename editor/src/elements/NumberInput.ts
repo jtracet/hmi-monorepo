@@ -2,65 +2,124 @@ import { fabric } from 'fabric'
 import { BaseElement, type ElementMeta } from './BaseElement'
 
 interface NumInputProps {
-    value:    number
-    fontSize: number
+  value: number
+  fontSize: number
+  label: string
+  labelFontSize: number
 }
 
 export class NumberInput extends BaseElement<NumInputProps> {
-    static elementType = 'numInput'
-    static meta        = { inputs: [], outputs: ['value'] } satisfies ElementMeta
+  static elementType = 'numInput'
+  static category = 'controls'
+  static meta = { inputs: [], outputs: ['value'] } satisfies ElementMeta
 
-    private txt:    fabric.Text
-    private _value: number
+  private txt: fabric.Text
+  private border: fabric.Rect
+  private _value: number
 
-    constructor(
-        canvas: fabric.Canvas,
-        x: number,
-        y: number,
-        props: Partial<NumInputProps> = {},
-    ) {
-        const defaults: NumInputProps = { value: 0, fontSize: 24 }
-        const p = { ...defaults, ...props }
+  constructor(
+    canvas: fabric.Canvas,
+    x: number,
+    y: number,
+    props: Partial<NumInputProps> = {}
+  ) {
+    const defaults: NumInputProps = {
+      value: 0,
+      fontSize: 24,
+      label: 'Number Input',
+      labelFontSize: 14
+    }
+    const p = { ...defaults, ...props }
 
-        const text = new fabric.Text(String(p.value), {
-            fontSize: p.fontSize,
-            fill:     '#000',
-            originX:  'left',
-            originY:  'top',
-        })
+    const width = 120
+    const height = 40
 
-        super(canvas, x, y, [text], p)
+    const border = new fabric.Rect({
+      width,
+      height,
+      fill: 'transparent',
+      stroke: '#ccc',
+      strokeWidth: 1,
+      rx: 4,
+      ry: 4,
+      originX: 'center',
+      originY: 'center',
+      left: 0,
+      top: 0
+    })
 
-        this.txt    = text
-        this._value = p.value
+    const text = new fabric.Text(String(p.value), {
+      fontSize: p.fontSize,
+      fill: '#000',
+      originX: 'center',
+      originY: 'center',
+      left: 0,
+      top: 0,
+      textAlign: 'center'
+    })
 
-        /* runtime-ввод числа */
-        this.on('mouseup', () => {
-            if (!this.isRuntime) return
-            const res = prompt('Введите число', String(this._value))
-            if (res == null) return
-            const n = Number(res)
-            if (!Number.isFinite(n)) return
-            this._value = n
-            this.updateFromProps()
-            this.emitState()
-        })
+    super(canvas, x, y, [border, text], p)
+
+    this.label.set({
+      text: p.label,
+      fontSize: p.labelFontSize,
+      originX: 'center',
+      originY: 'top',
+      top: height / 2.2,
+      left: 0
+    })
+
+    this.txt = text
+    this.border = border
+    this._value = p.value
+
+    this.on('mouseup', () => {
+      if (!this.isRuntime) return
+
+      const res = prompt('Введите число (макс. 6 цифр)', String(this._value))
+      if (res == null) return
+
+      if (!/^\d+$/.test(res) || res.length > 6) {
+        alert('Введите только цифры (максимум 6)')
+        return
+      }
+
+      const n = Number(res)
+      if (!Number.isFinite(n)) return
+
+      this._value = n
+      this.updateFromProps()
+      this.emitState()
+    })
+  }
+
+  updateFromProps() {
+    this._value = this.customProps.value
+
+    let displayValue = String(this._value)
+    if (displayValue.length > 6) {
+      displayValue = displayValue.slice(0, 6)
+      this._value = Number(displayValue)
     }
 
-    updateFromProps() {
-        this.txt.set({
-            text:     String(this._value),
-            fontSize: this.customProps.fontSize,
-        })
-        this.canvas?.requestRenderAll()
-    }
+    this.txt.set({
+      text: displayValue,
+      fontSize: this.customProps.fontSize
+    })
 
-    /** экран → PLC */
-    private emitState() {
-        this.canvas?.fire('element:output', {
-            target: this,
-            name:   'value',
-            value:  this._value,
-        })
-    }
+    this.label.set({
+      text: this.customProps.label,
+      fontSize: this.customProps.labelFontSize
+    })
+
+    this.canvas?.requestRenderAll()
+  }
+
+  private emitState() {
+    this.canvas?.fire('element:output', {
+      target: this,
+      name: 'value',
+      value: this._value
+    })
+  }
 }

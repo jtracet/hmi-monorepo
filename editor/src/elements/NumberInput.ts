@@ -15,7 +15,6 @@ export class NumberInput extends BaseElement<NumInputProps> {
 
   private txt: fabric.Text
   private border: fabric.Rect
-  private _value: number
 
   constructor(
     canvas: fabric.Canvas,
@@ -71,36 +70,25 @@ export class NumberInput extends BaseElement<NumInputProps> {
 
     this.txt = text
     this.border = border
-    this._value = p.value
 
     this.on('mouseup', () => {
       if (!this.isRuntime) return
 
-      const res = prompt('Введите число (макс. 6 цифр)', String(this._value))
+      const res = prompt('Введите число', String(this.customProps.value))
       if (res == null) return
-
-      if (!/^\d+$/.test(res) || res.length > 6) {
-        alert('Введите только цифры (максимум 6)')
-        return
-      }
 
       const n = Number(res)
       if (!Number.isFinite(n)) return
 
-      this._value = n
+      this.customProps.value = n
       this.updateFromProps()
       this.emitState()
     })
   }
 
   updateFromProps() {
-    this._value = this.customProps.value
-
-    let displayValue = String(this._value)
-    if (displayValue.length > 6) {
-      displayValue = displayValue.slice(0, 6)
-      this._value = Number(displayValue)
-    }
+    // Всегда берем значение из customProps
+    const displayValue = String(this.customProps.value)
 
     this.txt.set({
       text: displayValue,
@@ -119,7 +107,7 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.canvas?.fire('element:output', {
       target: this,
       name: 'value',
-      value: this._value
+      value: this.customProps.value  //значение из customProps
     })
   }
 }

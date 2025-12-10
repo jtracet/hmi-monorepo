@@ -1,5 +1,5 @@
 import { fabric } from 'fabric'
-import { BaseElement, type ElementMeta } from './BaseElement'
+import { BaseElement } from './BaseElement'
 
 interface ToggleProps {
     label: string
@@ -9,8 +9,7 @@ interface ToggleProps {
 export class ToggleButton extends BaseElement<ToggleProps> {
     static elementType = 'toggle'
     static category = 'controls'
-
-    static meta = { inputs: [], outputs: ['state'] } satisfies ElementMeta
+    static meta = { inputs: [], outputs: ['state'] } as const
 
     private background: fabric.Rect
     private slider: fabric.Rect
@@ -31,8 +30,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             fill: '#d1d5db',
             originX: 'center',
             originY: 'center',
-            selectable: false,
-            evented: false   
+            selectable: false  
         })
 
         const slider = new fabric.Rect({
@@ -44,8 +42,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             left: -15,
             originX: 'center',
             originY: 'center',
-            selectable: false,
-            evented: false  
+            selectable: false  
         })
 
         super(canvas, x, y, [background, slider], props)
@@ -58,24 +55,21 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             fontSize: props.labelFontSize  
         })
 
-        this.on('mouseup', this.handleClick.bind(this))
+        this.on('mouseup', (e) => {
+            if (!this.isRuntime) return
+            
+            e.e.preventDefault()
+            e.e.stopPropagation()
+            
+            const now = Date.now()
+            if (now - this.lastClickTime < 250) {
+                return
+            }
+            this.lastClickTime = now
+            this.toggleState()
+        })
 
         this.updateVisuals()
-    }
-
-    private handleClick(e: fabric.IEvent) {
-        if (!this.isRuntime) return
-
-        const now = Date.now()
-        if (now - this.lastClickTime < 250) {
-            this.lastClickTime = now
-            return
-        }
-
-        this.lastClickTime = now
-        this.toggleState()
-
-        e.stopPropagation()
     }
 
     public toggleState() {

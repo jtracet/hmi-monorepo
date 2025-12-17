@@ -6,6 +6,8 @@ interface LedProps {
     offColor: string
     label: string
     labelFontSize: number  
+    fontFamily?: string     // ← НОВОЕ
+    fontWeight?: string     // ← НОВОЕ
 }
 
 export class LedIndicator extends BaseElement<LedProps> {
@@ -21,7 +23,9 @@ export class LedIndicator extends BaseElement<LedProps> {
             onColor: '#65d665', 
             offColor: '#d1d5db', 
             label: 'Led',
-            labelFontSize: 14     
+            labelFontSize: 14,
+            fontFamily: 'Arial, sans-serif',  // ← НОВОЕ (значение по умолчанию)
+            fontWeight: 'normal'               // ← НОВОЕ (значение по умолчанию)
         }
 
         const circle = new fabric.Circle({
@@ -38,11 +42,18 @@ export class LedIndicator extends BaseElement<LedProps> {
 
         this.label.set({
             text: props.label,
-            fontSize: props.labelFontSize     
+            fontSize: props.labelFontSize,
+            fontFamily: props.fontFamily,  // ← НОВОЕ
+            fontWeight: props.fontWeight   // ← НОВОЕ
         })
 
-        this.on('mouseup', () => {
+        this.on('mouseup', (e) => {
             if (!this.isRuntime) return
+            
+            // Предотвращаем продолжение drag
+            e.e.preventDefault()
+            e.e.stopPropagation()
+            
             this._state = !this._state
             this.updateFromProps()
             this.emitState()
@@ -50,13 +61,19 @@ export class LedIndicator extends BaseElement<LedProps> {
     }
 
     updateFromProps() {
-        const { onColor, offColor, label, labelFontSize } = this.customProps
+        const { 
+            onColor, offColor, 
+            label, labelFontSize,
+            fontFamily, fontWeight  // ← НОВЫЕ
+        } = this.customProps
 
         this.circle.set('fill', this._state ? onColor : offColor)
 
         this.label.set({
             text: label,
-            fontSize: labelFontSize  
+            fontSize: labelFontSize,
+            fontFamily: fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
+            fontWeight: fontWeight || 'normal'               // ← НОВОЕ
         })
 
         this.canvas?.requestRenderAll()

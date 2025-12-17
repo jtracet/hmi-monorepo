@@ -36,7 +36,29 @@
           />
         </div>
 
-        <!-- general props (exclude label & labelFontSize to avoid duplicates) -->
+        <!-- Шрифт и жирность (специальные поля) -->
+        <div v-if="propsProxy.fontFamily !== undefined" class="mb-3">
+          <label class="block mb-1">Шрифт</label>
+          <n-select
+            v-model:value="propsProxy.fontFamily"
+            :options="fontFamilyOptions"
+            size="small"
+            filterable
+            @update:value="applyProps"
+          />
+        </div>
+
+        <div v-if="propsProxy.fontWeight !== undefined" class="mb-3">
+          <label class="block mb-1">Насыщенность шрифта</label>
+          <n-select
+            v-model:value="propsProxy.fontWeight"
+            :options="fontWeightOptions"
+            size="small"
+            @update:value="applyProps"
+          />
+        </div>
+
+        <!-- general props (exclude label & labelFontSize & font properties to avoid duplicates) -->
         <div v-for="key in filteredKeys" :key="key" class="mb-2">
           <label class="block mb-1">{{ key }}</label>
 
@@ -75,7 +97,15 @@
           <div v-if="inputs.length">
             <div v-for="pin in inputs" :key="pin" class="mb-2">
               <label class="block mb-1">{{ pin }}</label>
-              <n-select :options="backendOutputsOptions" v-model:value="bindings.inputs[pin]" placeholder="— не привязано —" filterable clearable size="small" />
+              <n-select 
+                :options="backendOutputsOptions" 
+                :render-label="renderOption"
+                v-model:value="bindings.inputs[pin]" 
+                placeholder="— не привязано —" 
+                filterable 
+                clearable 
+                size="small" 
+              />
             </div>
           </div>
           <p v-else class="text-gray-400">Нет входных пинов</p>
@@ -85,7 +115,15 @@
           <div v-if="outputs.length">
             <div v-for="pin in outputs" :key="pin" class="mb-2">
               <label class="block mb-1">{{ pin }}</label>
-              <n-select :options="backendInputsOptions" v-model:value="bindings.outputs[pin]" placeholder="— не привязано —" filterable clearable size="small" />
+              <n-select 
+                :options="backendInputsOptions" 
+                :render-label="renderOption"
+                v-model:value="bindings.outputs[pin]" 
+                placeholder="— не привязано —" 
+                filterable 
+                clearable 
+                size="small"
+              />
             </div>
           </div>
           <p v-else class="text-gray-400">Нет выходных пинов</p>
@@ -98,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, h } from 'vue'
 import {
   NInput,
   NButton,
@@ -126,6 +164,14 @@ const sel = computed(() => props.selected)
 
 const layerIndex = ref(0)
 const maxLayer = ref(0)
+
+function renderOption(option: any) {
+  return h(
+    'span',
+    { title: option.title },
+    option.label
+  )
+}
 
 watch(
   sel,
@@ -194,11 +240,30 @@ function applyProps() {
 }
 
 /* filtered keys to avoid duplicate label controls */
-const filteredKeys = computed(() => Object.keys(propsProxy).filter(k => k !== 'label' && k !== 'labelFontSize'))
+const filteredKeys = computed(() => 
+  Object.keys(propsProxy).filter(k => 
+    k !== 'label' && 
+    k !== 'labelFontSize' && 
+    k !== 'fontFamily' && 
+    k !== 'fontWeight'
+  )
+)
 
 /* bindings */
 const ss = useSessionStore()
-const makeOpts = (obj: Record<string, any>) => Object.keys(obj).map(k => ({ label: k, value: k }))
+
+/*
+function cleanVariableName(varName: string): string {
+  return varName.replace(/^[^.]+\./, '')
+} */
+
+const makeOpts = (obj: Record<string, any>) => 
+  Object.keys(obj).map(k => ({ 
+    label: k,
+    value: k,
+    title: k
+  }))
+
 const backendInputsOptions = computed(() => makeOpts(ss.backendInputs))
 const backendOutputsOptions = computed(() => makeOpts(ss.backendOutputs))
 
@@ -223,6 +288,26 @@ watch(propsProxy, () => {
     ;(sel.value as any).updateFromProps()
   }
 }, { deep: true })
+
+/* Опции для шрифтов */
+const fontFamilyOptions = [
+  { label: 'Arial', value: 'Arial, sans-serif' },
+  { label: 'Helvetica', value: 'Helvetica, sans-serif' },
+  { label: 'Times New Roman', value: 'Times New Roman, serif' },
+  { label: 'Courier New', value: 'Courier New, monospace' },
+  { label: 'Georgia', value: 'Georgia, serif' },
+  { label: 'Verdana', value: 'Verdana, sans-serif' },
+  { label: 'Tahoma', value: 'Tahoma, sans-serif' },
+  { label: 'Trebuchet MS', value: 'Trebuchet MS, sans-serif' },
+  { label: 'Impact', value: 'Impact, sans-serif' },
+  { label: 'Comic Sans MS', value: 'Comic Sans MS, cursive' },
+]
+
+const fontWeightOptions = [
+  { label: 'Normal', value: 'normal' },
+  { label: 'Bold', value: 'bold' },
+  { label: '900 (Black)', value: '900' },
+]
 </script>
 
 <style scoped>

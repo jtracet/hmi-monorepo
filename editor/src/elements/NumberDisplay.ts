@@ -6,12 +6,13 @@ interface NumDisplayProps {
   precision: number
   label: string
   labelFontSize: number
+  fontFamily?: string     // ← НОВОЕ
+  fontWeight?: string     // ← НОВОЕ
 }
 
 export class NumberDisplay extends BaseElement<NumDisplayProps> {
   static elementType = 'numDisplay'
   static category = 'indicators'
-
   static meta = { inputs: ['value'], outputs: [] } satisfies ElementMeta
 
   private txt: fabric.Text
@@ -27,7 +28,9 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
       fontSize: 24,
       precision: 2,
       label: 'Number Display',
-      labelFontSize: 14
+      labelFontSize: 14,
+      fontFamily: 'Arial, sans-serif',  // ← НОВОЕ
+      fontWeight: 'normal'               // ← НОВОЕ
     }
     const p = { ...defaults, ...props }
 
@@ -55,7 +58,9 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
       originY: 'center',
       left: 0,
       top: 0,
-      textAlign: 'center'
+      textAlign: 'center',
+      fontFamily: p.fontFamily,  // ← НОВОЕ
+      fontWeight: p.fontWeight   // ← НОВОЕ
     })
 
     super(canvas, x, y, [border, text], p)
@@ -66,7 +71,9 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
       originX: 'center',
       originY: 'top',
       top: height / 2.2,
-      left: 0
+      left: 0,
+      fontFamily: p.fontFamily,  // ← НОВОЕ
+      fontWeight: p.fontWeight   // ← НОВОЕ
     })
 
     this.txt = text
@@ -75,12 +82,16 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
 
   updateFromProps() {
     this.txt.set({
-      fontSize: this.customProps.fontSize
+      fontSize: this.customProps.fontSize,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
+      fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
     })
 
     this.label.set({
       text: this.customProps.label,
-      fontSize: this.customProps.labelFontSize
+      fontSize: this.customProps.labelFontSize,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
+      fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
     })
 
     this.canvas?.requestRenderAll()
@@ -99,7 +110,11 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
       }
     }
 
-    this.txt.set({ text: displayText })
+    this.txt.set({ 
+      text: displayText,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ (чтобы не сбрасывалось)
+      fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
+    })
     this.canvas?.requestRenderAll()
   }
 }

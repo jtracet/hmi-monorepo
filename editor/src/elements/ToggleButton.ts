@@ -4,6 +4,8 @@ import { BaseElement } from './BaseElement'
 interface ToggleProps {
     label: string
     labelFontSize: number   
+    fontFamily?: string     // ← НОВОЕ
+    fontWeight?: string     // ← НОВОЕ
 }
 
 export class ToggleButton extends BaseElement<ToggleProps> {
@@ -19,7 +21,9 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     constructor(canvas: fabric.Canvas, x: number, y: number) {
         const props: ToggleProps = { 
             label: 'Slide Switch',
-            labelFontSize: 14       
+            labelFontSize: 14,
+            fontFamily: 'Arial, sans-serif',  // ← НОВОЕ
+            fontWeight: 'normal'               // ← НОВОЕ
         }
 
         const background = new fabric.Rect({
@@ -52,7 +56,9 @@ export class ToggleButton extends BaseElement<ToggleProps> {
 
         this.label.set({
             text: props.label,
-            fontSize: props.labelFontSize  
+            fontSize: props.labelFontSize,
+            fontFamily: props.fontFamily,  // ← НОВОЕ
+            fontWeight: props.fontWeight   // ← НОВОЕ
         })
 
         this.on('mouseup', (e) => {
@@ -88,7 +94,9 @@ export class ToggleButton extends BaseElement<ToggleProps> {
 
         this.label.set({
             text: this.customProps.label,
-            fontSize: this.customProps.labelFontSize  
+            fontSize: this.customProps.labelFontSize,
+            fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
+            fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
         })
 
         this.background.set({

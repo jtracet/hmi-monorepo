@@ -6,6 +6,8 @@ interface NumInputProps {
   fontSize: number
   label: string
   labelFontSize: number
+  fontFamily?: string     // ← НОВОЕ
+  fontWeight?: string     // ← НОВОЕ
 }
 
 export class NumberInput extends BaseElement<NumInputProps> {
@@ -26,7 +28,9 @@ export class NumberInput extends BaseElement<NumInputProps> {
       value: 0,
       fontSize: 24,
       label: 'Number Input',
-      labelFontSize: 14
+      labelFontSize: 14,
+      fontFamily: 'Arial, sans-serif',  // ← НОВОЕ
+      fontWeight: 'normal'               // ← НОВОЕ
     }
     const p = { ...defaults, ...props }
 
@@ -54,7 +58,9 @@ export class NumberInput extends BaseElement<NumInputProps> {
       originY: 'center',
       left: 0,
       top: 0,
-      textAlign: 'center'
+      textAlign: 'center',
+      fontFamily: p.fontFamily,  // ← НОВОЕ
+      fontWeight: p.fontWeight   // ← НОВОЕ
     })
 
     super(canvas, x, y, [border, text], p)
@@ -65,14 +71,19 @@ export class NumberInput extends BaseElement<NumInputProps> {
       originX: 'center',
       originY: 'top',
       top: height / 2.2,
-      left: 0
+      left: 0,
+      fontFamily: p.fontFamily,  // ← НОВОЕ
+      fontWeight: p.fontWeight   // ← НОВОЕ
     })
 
     this.txt = text
     this.border = border
 
-    this.on('mouseup', () => {
+    this.on('mouseup', (e) => {
       if (!this.isRuntime) return
+      
+      e.e.preventDefault()
+      e.e.stopPropagation()
 
       const res = prompt('Введите число', String(this.customProps.value))
       if (res == null) return
@@ -87,17 +98,20 @@ export class NumberInput extends BaseElement<NumInputProps> {
   }
 
   updateFromProps() {
-    // Всегда берем значение из customProps
     const displayValue = String(this.customProps.value)
 
     this.txt.set({
       text: displayValue,
-      fontSize: this.customProps.fontSize
+      fontSize: this.customProps.fontSize,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
+      fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
     })
 
     this.label.set({
       text: this.customProps.label,
-      fontSize: this.customProps.labelFontSize
+      fontSize: this.customProps.labelFontSize,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
+      fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
     })
 
     this.canvas?.requestRenderAll()
@@ -107,7 +121,7 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.canvas?.fire('element:output', {
       target: this,
       name: 'value',
-      value: this.customProps.value  //значение из customProps
+      value: this.customProps.value
     })
   }
 }

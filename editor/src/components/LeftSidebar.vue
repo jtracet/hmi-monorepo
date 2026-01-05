@@ -87,10 +87,14 @@ function doSave() {
     },
   }
   const blob = new Blob([JSON.stringify(hmi, null, 2)], {type: 'application/json'})
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.download = 'screen.hmi.json'
-  a.href = URL.createObjectURL(blob)
+  a.href = url
+  document.body.appendChild(a)
   a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 function onFile(e: Event) {

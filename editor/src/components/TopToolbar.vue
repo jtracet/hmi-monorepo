@@ -29,19 +29,16 @@ import {computed} from 'vue'
 import {SECTIONS, listCommandsBySection} from '../commands'
 import type {OperationSectionId} from '../commands/types'
 import {useCommandState} from '../composables/useCommandState'
-import {useCanvasStore} from '../store/canvas'
 import OpButton from './operations/OpButton.vue'
 
 const sections = computed(() => SECTIONS)
 const {isCommandDisabled, isCommandActive} = useCommandState()
-const store = useCanvasStore()
-const lastCommand = computed(() => store.operations.lastCommand)
 
 function commandsBySection(section: OperationSectionId) {
   return listCommandsBySection(section)
 }
 
-function isCommandHighlighted(section: OperationSectionId, cmd: ReturnType<typeof commandsBySection>[number]) {
-  return isCommandActive(cmd) || lastCommand.value[section] === cmd.id
+function isCommandHighlighted(_section: OperationSectionId, cmd: ReturnType<typeof commandsBySection>[number]) {
+  return isCommandActive(cmd)
 }
 </script>

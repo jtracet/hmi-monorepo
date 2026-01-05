@@ -30,7 +30,29 @@ export const groupingCommands: CommandDefinition[] = [
         run: () => withCanvas(canvas => {
             const active = canvas.getActiveObject()
             if (!active || active.type !== 'group') return false
-                ;(active as fabric.Group).toActiveSelection()
+            const group = active as fabric.Group
+            const items = group.getObjects().slice()
+            const groupMatrix = group.calcTransformMatrix()
+
+            canvas.discardActiveObject()
+            canvas.remove(group)
+
+            items.forEach(item => {
+                const localPoint = new fabric.Point(item.left ?? 0, item.top ?? 0)
+                const absPoint = fabric.util.transformPoint(localPoint, groupMatrix)
+                ;(item as any).group = undefined
+                item.set({left: absPoint.x, top: absPoint.y})
+                item.setCoords()
+                canvas.add(item)
+            })
+
+            if (items.length > 1) {
+                const sel = new fabric.ActiveSelection(items, {canvas})
+                canvas.setActiveObject(sel)
+            } else if (items.length === 1) {
+                canvas.setActiveObject(items[0])
+            }
+
             commitCanvasChange(canvas)
             return true
         }),

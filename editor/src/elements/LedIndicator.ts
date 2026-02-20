@@ -6,13 +6,15 @@ interface LedProps {
     offColor: string
     label: string
     labelFontSize: number  
-    fontFamily?: string     // ← НОВОЕ
-    fontWeight?: string     // ← НОВОЕ
+    fontFamily?: string
+    fontWeight?: string
 }
 
 export class LedIndicator extends BaseElement<LedProps> {
     static elementType = 'led'
-    static category = 'indicators'
+    static category = 'boolean'
+    static subcategory = 'indicators'
+
     static meta = { inputs: ['value'], outputs: ['value'] } satisfies ElementMeta
 
     private circle: fabric.Circle
@@ -24,8 +26,8 @@ export class LedIndicator extends BaseElement<LedProps> {
             offColor: '#d1d5db', 
             label: 'Led',
             labelFontSize: 14,
-            fontFamily: 'Arial, sans-serif',  // ← НОВОЕ (значение по умолчанию)
-            fontWeight: 'normal'               // ← НОВОЕ (значение по умолчанию)
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'normal'
         }
 
         const circle = new fabric.Circle({
@@ -43,14 +45,13 @@ export class LedIndicator extends BaseElement<LedProps> {
         this.label.set({
             text: props.label,
             fontSize: props.labelFontSize,
-            fontFamily: props.fontFamily,  // ← НОВОЕ
-            fontWeight: props.fontWeight   // ← НОВОЕ
+            fontFamily: props.fontFamily,
+            fontWeight: props.fontWeight
         })
 
         this.on('mouseup', (e) => {
             if (!this.isRuntime) return
             
-            // Предотвращаем продолжение drag
             e.e.preventDefault()
             e.e.stopPropagation()
             
@@ -64,7 +65,7 @@ export class LedIndicator extends BaseElement<LedProps> {
         const { 
             onColor, offColor, 
             label, labelFontSize,
-            fontFamily, fontWeight  // ← НОВЫЕ
+            fontFamily, fontWeight
         } = this.customProps
 
         this.circle.set('fill', this._state ? onColor : offColor)
@@ -72,8 +73,8 @@ export class LedIndicator extends BaseElement<LedProps> {
         this.label.set({
             text: label,
             fontSize: labelFontSize,
-            fontFamily: fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
-            fontWeight: fontWeight || 'normal'               // ← НОВОЕ
+            fontFamily: fontFamily || 'Arial, sans-serif',
+            fontWeight: fontWeight || 'normal'
         })
 
         this.canvas?.requestRenderAll()

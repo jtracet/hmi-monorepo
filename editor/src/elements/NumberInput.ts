@@ -6,13 +6,14 @@ interface NumInputProps {
   fontSize: number
   label: string
   labelFontSize: number
-  fontFamily?: string     // ← НОВОЕ
-  fontWeight?: string     // ← НОВОЕ
+  fontFamily?: string
+  fontWeight?: string
 }
 
 export class NumberInput extends BaseElement<NumInputProps> {
   static elementType = 'numInput'
-  static category = 'controls'
+  static category = 'numeric'
+  static subcategory = 'controls'
   static meta = { inputs: [], outputs: ['value'] } satisfies ElementMeta
 
   private txt: fabric.Text
@@ -29,8 +30,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
       fontSize: 24,
       label: 'Number Input',
       labelFontSize: 14,
-      fontFamily: 'Arial, sans-serif',  // ← НОВОЕ
-      fontWeight: 'normal'               // ← НОВОЕ
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'normal'
     }
     const p = { ...defaults, ...props }
 
@@ -59,8 +60,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
       left: 0,
       top: 0,
       textAlign: 'center',
-      fontFamily: p.fontFamily,  // ← НОВОЕ
-      fontWeight: p.fontWeight   // ← НОВОЕ
+      fontFamily: p.fontFamily,
+      fontWeight: p.fontWeight
     })
 
     super(canvas, x, y, [border, text], p)
@@ -72,8 +73,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
       originY: 'top',
       top: height / 2.2,
       left: 0,
-      fontFamily: p.fontFamily,  // ← НОВОЕ
-      fontWeight: p.fontWeight   // ← НОВОЕ
+      fontFamily: p.fontFamily,
+      fontWeight: p.fontWeight
     })
 
     this.txt = text
@@ -103,15 +104,15 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.txt.set({
       text: displayValue,
       fontSize: this.customProps.fontSize,
-      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
-      fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
+      fontWeight: this.customProps.fontWeight || 'normal'
     })
 
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
-      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
-      fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
+      fontWeight: this.customProps.fontWeight || 'normal'
     })
 
     this.canvas?.requestRenderAll()

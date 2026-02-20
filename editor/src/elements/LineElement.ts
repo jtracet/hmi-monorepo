@@ -44,15 +44,15 @@ export class LineElement extends BaseElement<LineProps> {
         })
 
         this.setControlsVisibility({
-            tl: false, // верхний левый
-            tr: false, // верхний правый  
-            bl: false, // нижний левый
-            br: false, // нижний правый
-            ml: true,  // средний левый - РАБОТАЕТ
-            mr: true,  // средний правый - РАБОТАЕТ
-            mt: false, // верхний средний
-            mb: false, // нижний средний
-            mtr: true  // контрол вращения - РАБОТАЕТ
+            tl: false,
+            tr: false,
+            bl: false,
+            br: false,
+            ml: true,
+            mr: true,
+            mt: false,
+            mb: false,
+            mtr: true
         })
 
         this.lockScalingY = true

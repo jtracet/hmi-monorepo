@@ -3,14 +3,16 @@ import { BaseElement } from './BaseElement'
 
 interface ToggleProps {
     label: string
-    labelFontSize: number   
-    fontFamily?: string     // ← НОВОЕ
-    fontWeight?: string     // ← НОВОЕ
+    labelFontSize: number
+    fontFamily?: string
+    fontWeight?: string
 }
 
 export class ToggleButton extends BaseElement<ToggleProps> {
     static elementType = 'toggle'
-    static category = 'controls'
+    static category = 'boolean'
+    static subcategory = 'controls'
+
     static meta = { inputs: [], outputs: ['state'] } as const
 
     private background: fabric.Rect
@@ -22,8 +24,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         const props: ToggleProps = { 
             label: 'Slide Switch',
             labelFontSize: 14,
-            fontFamily: 'Arial, sans-serif',  // ← НОВОЕ
-            fontWeight: 'normal'               // ← НОВОЕ
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'normal'
         }
 
         const background = new fabric.Rect({
@@ -34,7 +36,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             fill: '#d1d5db',
             originX: 'center',
             originY: 'center',
-            selectable: false  
+            selectable: false,
+            evented: true 
         })
 
         const slider = new fabric.Rect({
@@ -46,10 +49,17 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             left: -15,
             originX: 'center',
             originY: 'center',
-            selectable: false  
+            selectable: false,
+            evented: true   
         })
 
         super(canvas, x, y, [background, slider], props)
+
+        this.forEachObject(obj => {
+            obj.set('evented', true)
+            obj.set('selectable', false)
+            obj.set('hoverCursor', 'pointer')
+        })
 
         this.background = background
         this.slider = slider
@@ -57,8 +67,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.label.set({
             text: props.label,
             fontSize: props.labelFontSize,
-            fontFamily: props.fontFamily,  // ← НОВОЕ
-            fontWeight: props.fontWeight   // ← НОВОЕ
+            fontFamily: props.fontFamily,
+            fontWeight: props.fontWeight
         })
 
         this.on('mouseup', (e) => {
@@ -74,6 +84,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             this.lastClickTime = now
             this.toggleState()
         })
+
 
         this.updateVisuals()
     }
@@ -95,8 +106,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.label.set({
             text: this.customProps.label,
             fontSize: this.customProps.labelFontSize,
-            fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',  // ← НОВОЕ
-            fontWeight: this.customProps.fontWeight || 'normal'               // ← НОВОЕ
+            fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
+            fontWeight: this.customProps.fontWeight || 'normal'
         })
 
         this.background.set({

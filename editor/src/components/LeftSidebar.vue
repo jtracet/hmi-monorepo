@@ -1,6 +1,5 @@
 <template>
   <div v-bind="$attrs">
-    <!----- переключатель режима ------------------>
     <n-radio-group
         v-model:value="mode"
         class="mb-4"
@@ -9,17 +8,89 @@
       <n-radio-button value="runtime">Интерактив</n-radio-button>
       <n-radio-button value="design">Редактирование</n-radio-button>
     </n-radio-group>
-    <div class="w-64 bg-gray-100 p-4 overflow-y-auto space-y-2 border-r">
-      <h2 class="font-semibold text-lg mb-2">Элементы</h2>
-      <button
-          v-for="s in palette"
-          :key="s.key"
-          draggable="true"
-          @dragstart="e => e.dataTransfer?.setData('shape', s.key)"
-          class="block w-full px-3 py-1.5 bg-white rounded shadow text-left hover:bg-gray-50 active:scale-95 transition"
+    
+    <div class="w-64 bg-gray-100 p-4 overflow-y-auto space-y-2 border-r" style="max-height: 600px;">
+      <div 
+        v-for="(categoryData, categoryKey) in paletteWithSubcategories" 
+        :key="categoryKey"
+        class="border border-gray-300 rounded bg-white overflow-hidden mb-2"
       >
-        {{ s.label }}
-      </button>
+        <div 
+          class="flex items-center justify-between px-3 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
+          @click="toggleCategory(categoryKey)"
+        >
+          <h2 class="font-semibold capitalize">{{ categoryKey }}</h2>
+          <span class="text-gray-600 text-lg transition-transform" :class="{ 'rotate-180': expandedCategory === categoryKey }">
+            ▼
+          </span>
+        </div>
+        
+        <div v-if="expandedCategory === categoryKey" class="p-2 space-y-2 border-t border-gray-200">
+          <template v-if="categoryData.hasSubcategories">
+            <div v-if="categoryData.subcategories.controls?.length" class="border border-gray-200 rounded overflow-hidden">
+              <div 
+                class="flex items-center justify-between px-3 py-1.5 bg-gray-100 text-sm cursor-pointer hover:bg-gray-200 transition"
+                @click.stop="toggleSubcategory(categoryKey, 'controls')"
+              >
+                <span class="font-medium">Controls</span>
+                <span class="text-gray-600 text-sm transition-transform" :class="{ 'rotate-180': expandedSubcategory[`${categoryKey}-controls`] }">
+                  ▼
+                </span>
+              </div>
+              <div v-if="expandedSubcategory[`${categoryKey}-controls`]" class="p-1 space-y-1">
+                <button
+                  v-for="s in categoryData.subcategories.controls"
+                  :key="s.key"
+                  draggable="true"
+                  @dragstart="e => e.dataTransfer?.setData('shape', s.key)"
+                  class="block w-full px-3 py-1.5 bg-white rounded shadow-sm text-left hover:bg-gray-50 active:scale-95 transition text-sm"
+                >
+                  {{ s.label }}
+                </button>
+              </div>
+            </div>
+
+            <div v-if="categoryData.subcategories.indicators?.length" class="border border-gray-200 rounded overflow-hidden">
+              <div 
+                class="flex items-center justify-between px-3 py-1.5 bg-gray-100 text-sm cursor-pointer hover:bg-gray-200 transition"
+                @click.stop="toggleSubcategory(categoryKey, 'indicators')"
+              >
+                <span class="font-medium">Indicators</span>
+                <span class="text-gray-600 text-sm transition-transform" :class="{ 'rotate-180': expandedSubcategory[`${categoryKey}-indicators`] }">
+                  ▼
+                </span>
+              </div>
+              <div v-if="expandedSubcategory[`${categoryKey}-indicators`]" class="p-1 space-y-1">
+                <button
+                  v-for="s in categoryData.subcategories.indicators"
+                  :key="s.key"
+                  draggable="true"
+                  @dragstart="e => e.dataTransfer?.setData('shape', s.key)"
+                  class="block w-full px-3 py-1.5 bg-white rounded shadow-sm text-left hover:bg-gray-50 active:scale-95 transition text-sm"
+                >
+                  {{ s.label }}
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <template v-else>
+            <button
+              v-for="s in categoryData.items"
+              :key="s.key"
+              draggable="true"
+              @dragstart="e => e.dataTransfer?.setData('shape', s.key)"
+              class="block w-full px-3 py-1.5 bg-white rounded shadow-sm text-left hover:bg-gray-50 active:scale-95 transition text-sm"
+            >
+              {{ s.label }}
+            </button>
+          </template>
+
+          <div v-if="!categoryData.items.length && !categoryData.hasSubcategories" class="text-gray-400 text-sm italic px-2 py-1">
+            Нет элементов
+          </div>
+        </div>
+      </div>
     </div>
 
     <hr class="my-3"/>
@@ -41,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed} from 'vue'
+import {ref, computed, onMounted} from 'vue'
 import {NButton} from 'naive-ui'
 import {fabric} from 'fabric'
 import {useCanvas} from '../composables/useCanvas'
@@ -58,10 +129,100 @@ const mode = computed({
 const {canvas} = useCanvas()
 const canvasStore = useCanvasStore()
 
-const palette = Object.entries(ElementRegistry).map(([key, ctor]) => ({
-  key,
-  label: (ctor as any).elementType || key
-}))
+const expandedCategory = ref<string | null>(null)
+
+const expandedSubcategory = ref<Record<string, boolean>>({})
+
+const palette: Record<string, any[]> = {
+  numeric: [],
+  boolean: [],
+  graph: [],
+  decorations: [],
+  ring: [],
+  layout: [],
+}
+
+Object.entries(ElementRegistry).forEach(([key, ctor]) => {
+  const category = (ctor as any).category || 'decorations'
+  const elementType = (ctor as any).elementType || key
+  const subcategory = (ctor as any).subcategory
+  
+  if (palette.hasOwnProperty(category)) {
+    palette[category].push({
+      key,
+      label: elementType,
+      subcategory,
+    })
+  } else {
+    console.warn(`Category "${category}" not found in palette, adding to decorations`)
+    palette.decorations.push({
+      key,
+      label: elementType,
+      subcategory,
+    })
+  }
+})
+
+const paletteWithSubcategories = computed(() => {
+  const result: Record<string, any> = {}
+  
+  Object.entries(palette).forEach(([categoryKey, items]) => {
+    const hasSubcategories = items.some(item => item.subcategory)
+    
+    if (hasSubcategories) {
+      const subcategories: Record<string, any[]> = {
+        controls: [],
+        indicators: []
+      }
+      
+      const itemsWithoutSubcategory: any[] = []
+      
+      items.forEach(item => {
+        if (item.subcategory === 'controls') {
+          subcategories.controls.push(item)
+        } else if (item.subcategory === 'indicators') {
+          subcategories.indicators.push(item)
+        } else {
+          itemsWithoutSubcategory.push(item)
+        }
+      })
+      
+      result[categoryKey] = {
+        hasSubcategories: true,
+        subcategories,
+        items: itemsWithoutSubcategory
+      }
+    } else {
+      result[categoryKey] = {
+        hasSubcategories: false,
+        items
+      }
+    }
+  })
+  
+  return result
+})
+
+function toggleCategory(categoryKey: string) {
+  if (expandedCategory.value === categoryKey) {
+    expandedCategory.value = null
+  } else {
+    expandedCategory.value = categoryKey
+    expandedSubcategory.value = {}
+  }
+}
+
+function toggleSubcategory(categoryKey: string, subcategoryKey: string) {
+  const key = `${categoryKey}-${subcategoryKey}`
+  expandedSubcategory.value[key] = !expandedSubcategory.value[key]
+}
+
+onMounted(() => {
+  const firstCategory = Object.keys(palette)[0]
+  if (firstCategory) {
+    expandedCategory.value = firstCategory
+  }
+})
 
 const fileInp = ref<HTMLInputElement | null>(null)
 
@@ -122,3 +283,32 @@ function onFile(e: Event) {
   })
 }
 </script>
+
+<style scoped>
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af #e5e7eb;
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+</style>

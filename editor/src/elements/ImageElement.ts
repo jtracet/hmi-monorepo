@@ -7,6 +7,7 @@ export interface ImageProps {
 
 export class ImageElement extends BaseElement<ImageProps> {
     static elementType = 'image'
+    static category = 'decorations'
     static meta = {inputs: [], outputs: []} satisfies ElementMeta
 
     constructor(

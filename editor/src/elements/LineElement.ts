@@ -8,6 +8,7 @@ interface LineProps {
 
 export class LineElement extends BaseElement<LineProps> {
     static elementType = 'line'
+    static category = 'decorations'
     static meta = { inputs: [], outputs: [] } satisfies ElementMeta
 
     private line: fabric.Line
@@ -21,7 +22,60 @@ export class LineElement extends BaseElement<LineProps> {
             strokeLineCap: 'round'
         })
         super(canvas, x, y, [l], p)
+        
+        this.label.set({
+            text: '',
+            visible: false
+        })
+        
         this.line = l
+        
+        this.setupLineControls()
+        
+        this.on('mousedblclick', this.handleDoubleClick.bind(this))
+        this.on('deselected', this.handleDeselected.bind(this))
+    }
+
+
+    private setupLineControls() {
+        this.set({
+            hasRotatingPoint: true,
+            lockRotation: false
+        })
+
+        this.setControlsVisibility({
+            tl: false,
+            tr: false,
+            bl: false,
+            br: false,
+            ml: true,
+            mr: true,
+            mt: false,
+            mb: false,
+            mtr: true
+        })
+
+        this.lockScalingY = true
+        
+        this.lockScalingX = false
+    }
+
+    private handleDoubleClick() {
+        this.set({
+            hasControls: true,
+            lockScalingX: false,
+            lockScalingY: true,
+            lockRotation: false
+        })
+        this.setupLineControls() 
+        this.canvas?.requestRenderAll()
+    }
+
+    private handleDeselected() {
+        this.set({
+            hasControls: false
+        })
+        this.canvas?.requestRenderAll()
     }
 
     updateFromProps() {
@@ -29,5 +83,6 @@ export class LineElement extends BaseElement<LineProps> {
             stroke: this.customProps.stroke,
             strokeWidth: this.customProps.strokeWidth
         })
+        this.canvas?.requestRenderAll()
     }
 }

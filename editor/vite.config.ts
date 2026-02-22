@@ -6,10 +6,12 @@ export default defineConfig(({mode}) => {
 
     const backend = env.VITE_BACKEND_URL
     return {
-        port: Number(env.VITE_PORT),
+        // port: Number(env.VITE_PORT),  // ← УБРАТЬ отсюда
         plugins: [vue()],
         resolve: {alias: {'@': '/src'}},
         server: {
+            host: '127.0.0.1',           // ← ДОБАВИТЬ
+            port: Number(env.VITE_PORT), // ← ПЕРЕМЕСТИТЬ сюда
             proxy: {
                 '/sessions': {
                     target: backend,

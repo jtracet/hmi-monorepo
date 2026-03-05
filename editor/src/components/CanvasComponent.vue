@@ -8,6 +8,7 @@
       @mousemove="onMouseMove"
       @mouseup="onMouseUp"
       @mouseleave="cancelSelection"
+      @contextmenu="cancelSelection"
   >
     <canvas ref="cnv" class="block w-full h-full" />
   </div>
@@ -137,6 +138,9 @@ function onMouseDown(e: MouseEvent) {
         return
     }
     
+    // Выделение только левой кнопкой
+    if (e.button !== 0) return
+
     // ЕСЛИ УЖЕ ЕСТЬ ВЫБРАННЫЕ ОБЪЕКТЫ - НЕ НАЧИНАЕМ ВЫДЕЛЕНИЕ
     const activeObjects = canvas.getActiveObjects()
     if (activeObjects && activeObjects.length > 0) {

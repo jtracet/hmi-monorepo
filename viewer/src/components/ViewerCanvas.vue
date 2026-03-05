@@ -120,6 +120,13 @@ function fitToLeftEdge() {
 }
 
 // --- Panning ---
+function suppressUndo(e: KeyboardEvent) {
+  const mod = e.ctrlKey || e.metaKey
+  if (mod && (e.code === 'KeyZ' || e.code === 'KeyY')) {
+    e.preventDefault()
+  }
+}
+
 function onSpaceDown(e: KeyboardEvent) {
   if (e.code !== 'Space' || isPanning) return
   isPanning = true
@@ -291,6 +298,7 @@ onMounted(() => {
 
   window.addEventListener('keydown', onSpaceDown)
   window.addEventListener('keyup', onSpaceUp)
+  window.addEventListener('keydown', suppressUndo)
 
   runtime.value = useHmiRuntime(canvas)
   if (props.hmi) {
@@ -301,6 +309,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onSpaceDown)
   window.removeEventListener('keyup', onSpaceUp)
+  window.removeEventListener('keydown', suppressUndo)
   resizeObserver?.disconnect()
   canvas.dispose()
 })

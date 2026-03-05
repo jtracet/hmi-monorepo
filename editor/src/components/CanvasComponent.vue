@@ -19,7 +19,7 @@ import {onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {fabric} from 'fabric'
 import {ElementRegistry} from '../elements'
 import type {ElementType} from '../elements'
-import {setCanvas} from '../composables/useCanvas'
+import {setCanvas, isSuppressed, setSuppressSnapshots, registerHistoryControls} from '../composables/useCanvas'
 import {useCanvasStore} from '../store/canvas'
 import {DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM, zoomToPointTransform} from '../utils/zoom'
 
@@ -58,6 +58,7 @@ function updateSelection() {
 }
 
 function snapshot() {
+    if (isSuppressed()) return
     undoStack.push(
         JSON.stringify(canvas.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta']))
     )
@@ -66,11 +67,13 @@ function snapshot() {
 }
 
 function loadState(json: any) {
+    setSuppressSnapshots(true)
     canvas.clear()
     fabric.util.enlivenObjects(json.objects ?? [], (objs: fabric.Object[]) => {
         objs.forEach(obj => canvas.add(obj))
         canvas.renderAll()
         updateSelection()
+        setSuppressSnapshots(false)
     }, 'fabric')
 }
 
@@ -447,6 +450,11 @@ onMounted(() => {
         selectionLineWidth: 2
     })
     setCanvas(canvas)
+    registerHistoryControls(() => {
+        undoStack.length = 0
+        redoStack.length = 0
+        snapshot()
+    })
     applyViewFromStore(canvasStore.view)
     canvasStore.setViewportSize(canvas.getWidth(), canvas.getHeight())
 

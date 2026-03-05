@@ -106,7 +106,7 @@
 import {ref, computed, onMounted} from 'vue'
 import {NButton} from 'naive-ui'
 import {fabric} from 'fabric'
-import {useCanvas} from '../composables/useCanvas'
+import {useCanvas, setSuppressSnapshots, resetHistory} from '../composables/useCanvas'
 import {ElementRegistry} from '../elements'
 import {useCanvasStore} from '../store/canvas'
 
@@ -249,6 +249,7 @@ function onFile(e: Event) {
     const json = JSON.parse(text)
     const currentCanvas = canvas.value
     if (!currentCanvas) return
+    setSuppressSnapshots(true)
     currentCanvas.clear()
     fabric.util.enlivenObjects(json.canvas.objects ?? [], (objs: fabric.Object[]) => {
       objs.forEach(obj => currentCanvas.add(obj))
@@ -263,6 +264,8 @@ function onFile(e: Event) {
           showGuides: Boolean(json.grid.showGuides),
         })
       }
+      setSuppressSnapshots(false)
+      resetHistory()
     }, 'fabric')
   })
 }

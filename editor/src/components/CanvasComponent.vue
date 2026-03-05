@@ -7,6 +7,7 @@
       @mousedown="onMouseDown"
       @mousemove="onMouseMove"
       @mouseup="onMouseUp"
+      @mouseleave="cancelSelection"
   >
     <canvas ref="cnv" class="block w-full h-full" />
   </div>
@@ -35,6 +36,15 @@ let applyingViewFromStore = false
 let isSelecting = false
 let selectionStart = { x: 0, y: 0 }
 let selectionRect: fabric.Rect | null = null
+
+function cancelSelection() {
+    if (!isSelecting || !selectionRect) return
+    canvas.remove(selectionRect)
+    selectionRect = null
+    isSelecting = false
+    canvas.selection = true
+    canvas.requestRenderAll()
+}
 
 const undoStack: string[] = []
 const redoStack: string[] = []
@@ -280,11 +290,7 @@ function onMouseUp() {
         }
         
         // Убираем прямоугольник выделения
-        canvas.remove(selectionRect)
-        selectionRect = null
-        isSelecting = false
-        canvas.selection = true // возвращаем стандартное выделение
-        canvas.requestRenderAll()
+        cancelSelection()
     }
 }
 
@@ -382,11 +388,7 @@ function handleKey(e: KeyboardEvent) {
     }
     if (e.code === 'Escape') {
         if (isSelecting && selectionRect) {
-            canvas.remove(selectionRect)
-            selectionRect = null
-            isSelecting = false
-            canvas.selection = true
-            canvas.requestRenderAll()
+            cancelSelection()
         } else {
             canvas.discardActiveObject()
             updateSelection()

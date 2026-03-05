@@ -1,14 +1,5 @@
 <template>
   <div v-bind="$attrs">
-    <n-radio-group
-        v-model:value="mode"
-        class="mb-4"
-        size="small"
-    >
-      <n-radio-button value="runtime">Интерактив</n-radio-button>
-      <n-radio-button value="design">Редактирование</n-radio-button>
-    </n-radio-group>
-    
     <div class="w-64 bg-gray-100 p-4 overflow-y-auto space-y-2 border-r" style="max-height: 600px;">
       <div 
         v-for="(categoryData, categoryKey) in paletteWithSubcategories" 
@@ -117,14 +108,7 @@ import {NButton} from 'naive-ui'
 import {fabric} from 'fabric'
 import {useCanvas} from '../composables/useCanvas'
 import {ElementRegistry} from '../elements'
-import {useEditorStore} from '../store/editor'
 import {useCanvasStore} from '../store/canvas'
-
-const editor = useEditorStore()
-const mode = computed({
-  get: () => editor.mode,
-  set: v => editor.setMode(v)
-})
 
 const {canvas} = useCanvas()
 const canvasStore = useCanvasStore()

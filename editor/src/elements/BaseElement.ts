@@ -29,7 +29,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         children: fabric.Object[] = [],
         props: TProps
     ) {
-        const label = new fabric.Text('name', {
+        const label = new fabric.Text(' ', {
             fontSize: 14,
             fill: '#000',
             originX: 'center',

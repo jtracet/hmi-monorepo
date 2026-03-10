@@ -9,10 +9,20 @@
       @mouseup="onMouseUp"
   >
     <canvas ref="cnv" class="block w-full h-full" />
+    <div class="absolute inset-0 pointer-events-none">
+      <GraphTimeSeries
+          v-for="g in graphs"
+          :key="g.id"
+          :series="demoSeries"
+          :style="getGraphStyle(g)"
+      />
+    </div>
   </div>
+  
 </template>
 
 <script setup lang="ts">
+import GraphTimeSeries from './GraphTimeSeries.vue'
 import {onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {fabric} from 'fabric'
 import {ElementRegistry} from '../elements'
@@ -24,6 +34,21 @@ import {DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM, zoomToPointTransform} from '../utils
 const wrapper = ref<HTMLElement>()
 const cnv = ref<HTMLCanvasElement>()
 const canvasStore = useCanvasStore()
+const graphs = ref<any[]>([])
+const demoSeries = [
+  {
+    name: 'Signal',
+    color: '#4f46e5',
+    data: [
+      { time: Date.now() - 5000, value: 10 },
+      { time: Date.now() - 4000, value: 15 },
+      { time: Date.now() - 3000, value: 8 },
+      { time: Date.now() - 2000, value: 20 },
+      { time: Date.now() - 1000, value: 12 },
+      { time: Date.now(), value: 18 }
+    ]
+  }
+]
 
 let canvas!: fabric.Canvas
 let resizeObserver: ResizeObserver | null = null
@@ -40,6 +65,22 @@ const undoStack: string[] = []
 const redoStack: string[] = []
 let clipboard: fabric.Object[] = []
 
+function updateGraphs() {
+    if (!canvas) return
+
+    graphs.value = canvas.getObjects().filter(
+        (o: any) => o.elementType === 'time-graph'
+    )
+}
+function getGraphStyle(obj: any) {
+    return {
+        position: 'absolute',
+        left: obj.left + 'px',
+        top: obj.top + 'px',
+        width: obj.width * obj.scaleX + 'px',
+        height: obj.height * obj.scaleY + 'px'
+    }
+}
 function updateSelection() {
     if (!canvas) return
     const active = canvas.getActiveObjects()
@@ -459,6 +500,9 @@ onMounted(() => {
     canvas.on('object:added', snapshot)
     canvas.on('object:modified', snapshot)
     canvas.on('object:removed', snapshot)
+    canvas.on('object:added', updateGraphs)
+    canvas.on('object:modified', updateGraphs)
+    canvas.on('object:removed', updateGraphs)
     canvas.on('object:moving', handleObjectMoving)
     canvas.on('mouse:wheel', handleWheel)
     canvas.on('after:render', () => {
@@ -467,6 +511,7 @@ onMounted(() => {
     })
 
     snapshot()
+    updateGraphs()
     updateSelection()
 
     window.addEventListener('keydown', onSpaceDown)

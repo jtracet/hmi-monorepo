@@ -143,6 +143,16 @@ function deleteSelection() {
 }
 
 function onSpaceDown(e: KeyboardEvent) {
+    const target = e.target as HTMLElement
+    const isInputFocused = target.tagName === 'INPUT' || 
+                          target.tagName === 'TEXTAREA' || 
+                          target.isContentEditable ||
+                          target.closest('input, textarea, [contenteditable="true"]')
+    
+    if (isInputFocused) {
+        return
+    }
+    
     if (e.code !== 'Space' || isPanning) return
     isPanning = true
     canvas.selection = false
@@ -151,6 +161,16 @@ function onSpaceDown(e: KeyboardEvent) {
 }
 
 function onSpaceUp(e: KeyboardEvent) {
+    const target = e.target as HTMLElement
+    const isInputFocused = target.tagName === 'INPUT' || 
+                          target.tagName === 'TEXTAREA' || 
+                          target.isContentEditable ||
+                          target.closest('input, textarea, [contenteditable="true"]')
+    
+    if (isInputFocused) {
+        return
+    }
+    
     if (e.code !== 'Space') return
     isPanning = false
     isDragging = false

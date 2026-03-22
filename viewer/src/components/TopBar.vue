@@ -2,7 +2,7 @@
   <header class="flex items-center gap-4 px-4 py-2 bg-white shadow">
     <h1 class="font-semibold">HMI Viewer</h1>
     <n-button @click="fileInp.click()" secondary size="small">
-      Открыть HMI-файл …
+      Загрузить...
     </n-button>
     <input ref="fileInp" type="file" accept=".json,.hmi" class="hidden" @change="onPick"/>
     <span v-if="sessionId" class="text-xs text-gray-500">session: {{ sessionId }}</span>

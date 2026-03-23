@@ -150,7 +150,7 @@ const elementDisplayNames: Record<string, string> = {
   'circle': 'Круг',
   'line': 'line',
   'container': 'Контейнер',
-  'group': 'Группа',
+  'graph': 'time-graph',
   'analog-input': 'Аналоговый ввод',
   'digital-input': 'Дискретный ввод',
   'meter': 'Измеритель',

@@ -5,7 +5,6 @@ export class GraphElement extends BaseElement<Record<string, never>> {
 
   static elementType = 'time-graph'
   static category = 'graph'
-  static subcategory = 'indicators'
 
   static meta = {
     inputs: [],

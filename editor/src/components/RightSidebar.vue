@@ -273,13 +273,28 @@ const outputs = computed<string[]>(() => sel.value?.meta?.outputs ?? [])
 const bindings = reactive<{ inputs: Record<string, string>; outputs: Record<string, string> }>({ inputs: {}, outputs: {} })
 
 watch(sel, s => {
-  bindings.inputs = s?.bindings?.inputs ?? {}
-  bindings.outputs = s?.bindings?.outputs ?? {}
+    if (s && typeof (s as any).getBindings === 'function') {
+        const savedBindings = (s as any).getBindings()
+        bindings.inputs = savedBindings?.inputs ?? {}
+        bindings.outputs = savedBindings?.outputs ?? {}
+    } else if (s?.bindings) {
+        bindings.inputs = s.bindings.inputs ?? {}
+        bindings.outputs = s.bindings.outputs ?? {}
+    } else {
+        bindings.inputs = {}
+        bindings.outputs = {}
+    }
 }, { immediate: true })
 
 watch(bindings, () => {
-  if (!sel.value) return
-  sel.value.bindings = JSON.parse(JSON.stringify(bindings))
+    if (!sel.value) return
+    // Используем метод setBindings вместо прямого присваивания
+    if (typeof (sel.value as any).setBindings === 'function') {
+        (sel.value as any).setBindings(JSON.parse(JSON.stringify(bindings)))
+    } else {
+        // fallback для обратной совместимости
+        sel.value.bindings = JSON.parse(JSON.stringify(bindings))
+    }
 }, { deep: true })
 
 watch(propsProxy, () => {

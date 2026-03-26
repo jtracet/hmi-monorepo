@@ -16,9 +16,11 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
     static meta: ElementMeta
 
     customProps!: TProps
-    bindings: SavedBindings = { inputs: {}, outputs: {} }
+    private _bindings: SavedBindings = { inputs: {}, outputs: {} }
     public id: any
     public label!: fabric.Text  
+    
+    protected bindIndicator!: fabric.Circle | null
 
     constructor(
         canvas: fabric.Canvas,
@@ -36,29 +38,48 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
             top: (children[0]?.height ?? 0) / 2 + 5 
         })
 
-        const allChildren = [...children, label]
+        const bindIndicator = new fabric.Circle({
+            radius: 6,
+            fill: '#019610',
+            stroke: '#ffffff',
+            strokeWidth: 1,
+            originX: 'right',
+            originY: 'center',
+            left: (children[0]?.width ?? 60) / 2,
+            top: -(children[0]?.height ?? 30) / 2,
+            selectable: false,
+            evented: false,
+            visible: false,
+            shadow: new fabric.Shadow({
+                color: 'rgba(0,0,0,0.3)',
+                blur: 3,
+                offsetX: 1,
+                offsetY: 1
+            })
+        })
+
+        const allChildren = [...children, label, bindIndicator]
 
         super(allChildren, { 
             left: x, 
             top: y,
-            selectable: false,      // ← нельзя выделять
-            hasControls: false,     // ← нет контролов
-            hasBorders: false,      // ← нет рамки выделения
-            lockMovementX: true,    // ← блокировка движения X
-            lockMovementY: true,    // ← блокировка движения Y
-            evented: true           // ← но события мыши работают!
+            selectable: false,
+            hasControls: false,
+            hasBorders: false,
+            lockMovementX: true,
+            lockMovementY: true,
+            evented: true
         })
 
         this.id = this.id ?? crypto.randomUUID()
         this.customProps = props
         this.label = label
+        this.bindIndicator = bindIndicator
 
         ;(this as any).elementType = (this.constructor as any).elementType
         ;(this as any).meta = (this.constructor as any).meta
-        ;(this as any).bindings = this.bindings
 
         this.hoverCursor = 'default'
-
 
         this.lockScalingX = true
         this.lockScalingY = true
@@ -71,11 +92,66 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         })
 
         canvas.add(this)
+        
+        setTimeout(() => {
+            this.updateIndicatorPosition()
+            this.checkBindings()
+        }, 0)
+    }
+
+    get bindings(): SavedBindings {
+        return this._bindings
+    }
+    
+    set bindings(value: SavedBindings) {
+        this._bindings = {
+            inputs: { ...value.inputs },
+            outputs: { ...value.outputs }
+        }
+        this.checkBindings()
+        this.canvas?.requestRenderAll()
+    }
+
+    protected checkBindings() {
+        if (!this.bindIndicator) return
+        
+        const hasInputBindings = this._bindings?.inputs && 
+            Object.values(this._bindings.inputs).some(v => v && v.trim() !== '')
+        
+        const hasOutputBindings = this._bindings?.outputs && 
+            Object.values(this._bindings.outputs).some(v => v && v.trim() !== '')
+        
+        const hasAnyBindings = hasInputBindings || hasOutputBindings
+        
+        this.bindIndicator.set('visible', hasAnyBindings)
+        this.canvas?.requestRenderAll()
     }
 
     setState(_: Record<string, any>): void {}
 
     protected get isRuntime(): boolean {
         return true
+    }
+    
+    protected updateIndicatorPosition() {
+        if (!this.bindIndicator) return
+        
+        const mainChild = this.getObjects().find(obj => obj !== this.label && obj !== this.bindIndicator)
+        
+        if (mainChild) {
+            const width = mainChild.getScaledWidth ? mainChild.getScaledWidth() : (mainChild.width || 60)
+            const height = mainChild.getScaledHeight ? mainChild.getScaledHeight() : (mainChild.height || 30)
+            
+            this.bindIndicator.set({
+                left: width / 2,    
+                top: -height / 2    
+            })
+            this.bindIndicator.setCoords()
+        }
+    }
+    
+    setDimensions(width: number, height: number): void {
+        super.setDimensions(width, height)
+        this.updateIndicatorPosition()
     }
 }

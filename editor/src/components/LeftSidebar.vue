@@ -5,7 +5,7 @@
         class="mb-4"
         size="small"
     >
-      <n-radio-button value="runtime">Интерактив</n-radio-button>
+      <n-radio-button value="runtime">Тестирование</n-radio-button>
       <n-radio-button value="design">Редактирование</n-radio-button>
     </n-radio-group>
     
@@ -134,24 +134,24 @@ const expandedCategory = ref<string | null>(null)
 const expandedSubcategory = ref<Record<string, boolean>>({})
 
 const elementDisplayNames: Record<string, string> = {
-  'numInput': 'numeric',
-  'numControl': 'Number Control',
-  'numDisplay': 'numeric',
-  'toggle': 'slide switch',
+  'numInput': 'numeric: delete',
+  'numControl': 'Numeric Control',
+  'numDisplay': 'Numeric Indicator',
+  'toggle': 'Slide Switch',
   'slider': 'slider',
   'button': 'Кнопка',
   'text': 'Текст',
-  'image': 'image',
-  'led': 'LED',
+  'image': 'Image',
+  'led': 'Round LED',
   'gauge': 'Стрелочный индикатор',
   'progress': 'Прогресс-бар',
   'time-graph': 'График времени',
   'trend': 'Тренд',
   'rectangle': 'Прямоугольник',
   'circle': 'Круг',
-  'line': 'line',
+  'line': 'Line',
   'container': 'Контейнер',
-  'graph': 'time-graph',
+  'graph': 'Time Graph',
   'analog-input': 'Аналоговый ввод',
   'digital-input': 'Дискретный ввод',
   'meter': 'Измеритель',

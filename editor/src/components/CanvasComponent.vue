@@ -13,7 +13,11 @@
       <GraphTimeSeries
           v-for="g in graphs"
           :key="g.id"
-          :series="demoSeries"
+          :yMax="g.customProps?.yMax ?? 100"
+          :yStep="g.customProps?.yStep ?? 20"
+          :timeStep="g.customProps?.timeStep ?? 1"
+          :value="getGraphValue(g)"
+          :isRuntime="isRuntime"
           :style="getGraphStyle(g)"
       />
     </div>
@@ -23,7 +27,7 @@
 
 <script setup lang="ts">
 import GraphTimeSeries from './GraphTimeSeries.vue'
-import {onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {onBeforeUnmount, onMounted, ref, watch, computed} from 'vue'
 import {fabric} from 'fabric'
 import {ElementRegistry} from '../elements'
 import type {ElementType} from '../elements'
@@ -39,20 +43,7 @@ const canvasStore = useCanvasStore()
 const editorStore = useEditorStore()
 const sessionStore = useSessionStore()
 const graphs = ref<any[]>([])
-const demoSeries = [
-  {
-    name: 'Signal',
-    color: '#4f46e5',
-    data: [
-      { time: Date.now() - 5000, value: 10 },
-      { time: Date.now() - 4000, value: 15 },
-      { time: Date.now() - 3000, value: 8 },
-      { time: Date.now() - 2000, value: 20 },
-      { time: Date.now() - 1000, value: 12 },
-      { time: Date.now(), value: 18 }
-    ]
-  }
-]
+const isRuntime = computed(() => editorStore.mode === 'runtime')
 
 let canvas!: fabric.Canvas
 let resizeObserver: ResizeObserver | null = null
@@ -168,6 +159,10 @@ function getGraphStyle(obj: any) {
         width: obj.width * obj.scaleX + 'px',
         height: obj.height * obj.scaleY + 'px'
     }
+}
+
+function getGraphValue(g: any): number {
+    return typeof g.getCurrentValue === 'function' ? g.getCurrentValue() : 0
 }
 function updateSelection() {
     if (!canvas) return

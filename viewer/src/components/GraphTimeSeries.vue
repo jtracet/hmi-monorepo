@@ -103,12 +103,10 @@ watch(() => props.isRuntime, (val) => {
   }
 })
 
-// rebuild axes when scale props change
 watch(() => [props.yMax, props.yStep], () => {
   chart?.setOption(buildOption())
 })
 
-// restart timer with new interval when timeStep changes
 watch(() => props.timeStep, () => {
   if (props.isRuntime) {
     stopTimer()

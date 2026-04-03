@@ -135,6 +135,7 @@ const expandedSubcategory = ref<Record<string, boolean>>({})
 
 const elementDisplayNames: Record<string, string> = {
   'numInput': 'numeric',
+  'numControl': 'Number Control',
   'numDisplay': 'numeric',
   'toggle': 'slide switch',
   'slider': 'slider',

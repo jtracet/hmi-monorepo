@@ -91,6 +91,23 @@
         </div>
       </details>
 
+      <!-- graph scale controls -->
+      <details v-if="sel?.elementType === 'time-graph'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Шкалы графика</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Макс. значение (Y)</label>
+          <n-input-number v-model:value="propsProxy.yMax" :min="1" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Шаг по Y</label>
+          <n-input-number v-model:value="propsProxy.yStep" :min="1" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Шаг по времени (сек)</label>
+          <n-input-number v-model:value="propsProxy.timeStep" :min="0.1" :step="0.5" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
       <!-- bindings -->
       <n-tabs type="card" size="small" animated>
         <n-tab-pane name="inputs" tab="Входы (read)">
@@ -245,7 +262,9 @@ const filteredKeys = computed(() =>
     k !== 'label' && 
     k !== 'labelFontSize' && 
     k !== 'fontFamily' && 
-    k !== 'fontWeight'
+    k !== 'fontWeight' &&
+    // graph scale props are shown in dedicated section
+    !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'width', 'height'].includes(k))
   )
 )
 

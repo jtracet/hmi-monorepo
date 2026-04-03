@@ -1,5 +1,5 @@
 import { fabric } from 'fabric'
-import { BaseElement, type ElementMeta } from './BaseElement'
+import { BaseElement } from './BaseElement'
 
 export interface GraphProps {
   label: string
@@ -14,7 +14,7 @@ export interface GraphProps {
 export class GraphElement extends BaseElement<GraphProps> {
   static elementType = 'time-graph'
   static category = 'graph'
-  static meta = { inputs: ['value'], outputs: [] } satisfies ElementMeta
+  static meta = { inputs: ['value'] as string[], outputs: [] as string[] }
 
   private _currentValue = 0
 

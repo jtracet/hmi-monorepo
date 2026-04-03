@@ -106,6 +106,10 @@
           <label class="block mb-1">Шаг по времени (сек)</label>
           <n-input-number v-model:value="propsProxy.timeStep" :min="0.1" :step="0.5" size="small" @update:value="applyProps" />
         </div>
+        <div class="mb-2">
+          <label class="block mb-1">Точек на шкале времени</label>
+          <n-input-number v-model:value="propsProxy.timePoints" :min="2" :max="200" size="small" @update:value="applyProps" />
+        </div>
       </details>
 
       <!-- bindings -->
@@ -264,7 +268,7 @@ const filteredKeys = computed(() =>
     k !== 'fontFamily' && 
     k !== 'fontWeight' &&
     // graph scale props are shown in dedicated section
-    !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'width', 'height'].includes(k))
+    !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k))
   )
 )
 

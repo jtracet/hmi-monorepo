@@ -9,7 +9,8 @@ import * as echarts from 'echarts'
 const props = defineProps<{
   yMax: number
   yStep: number
-  timeStep: number
+  timeStep: number   // интервал между точками, секунды
+  timePoints: number // количество точек на шкале времени
   value: number
   isRuntime: boolean
 }>()
@@ -18,26 +19,34 @@ const chartEl = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 let timer: number | null = null
 
-const MAX_POINTS = 20
-const timestamps: number[] = []
-const data: (number | null)[] = []
+// Фиксированный массив данных, всегда длиной timePoints, заполнен нулями
+let data: number[] = []
+
+function initData() {
+  data = Array(props.timePoints).fill(0)
+}
+
+// Метки оси X: от -(N-1) до 0, фиксированные
+function buildXLabels(): string[] {
+  return Array.from({ length: props.timePoints }, (_, i) => String(i - (props.timePoints - 1)))
+}
 
 function buildOption() {
   return {
     backgroundColor: '#0f172a',
     animation: false,
-    grid: { left: 55, right: 20, top: 20, bottom: 35 },
+    grid: { left: 55, right: 20, top: 20, bottom: 30 },
     tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'category',
-      data: timestamps.map(t => {
-        const d = new Date(t)
-        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`
-      }),
+      data: buildXLabels(),
       boundaryGap: false,
       axisLine: { lineStyle: { color: '#94a3b8' } },
-      axisLabel: { color: '#94a3b8', fontSize: 10, rotate: 30 },
-      splitLine: { show: true, lineStyle: { color: '#1e293b' } },
+      axisLabel: { color: '#94a3b8', fontSize: 10 },
+      splitLine: {
+        show: true,
+        lineStyle: { color: '#1e293b' }
+      },
     },
     yAxis: {
       type: 'value',
@@ -46,7 +55,10 @@ function buildOption() {
       interval: props.yStep,
       axisLine: { lineStyle: { color: '#94a3b8' } },
       axisLabel: { color: '#94a3b8', fontSize: 10 },
-      splitLine: { show: true, lineStyle: { color: '#1e293b' } },
+      splitLine: {
+        show: true,
+        lineStyle: { color: '#1e293b' }
+      },
     },
     series: [{
       name: 'value',
@@ -63,16 +75,11 @@ function buildOption() {
 }
 
 function addPoint() {
-  const now = Date.now()
-  timestamps.push(now)
+  // сдвигаем влево, новое значение справа
+  data.shift()
   data.push(props.value)
-
-  if (timestamps.length > MAX_POINTS) {
-    timestamps.shift()
-    data.shift()
-  }
-
-  chart?.setOption(buildOption())
+  // обновляем только серию, не трогаем оси
+  chart?.setOption({ series: [{ data: [...data] }] })
 }
 
 function startTimer() {
@@ -87,28 +94,39 @@ function stopTimer() {
   }
 }
 
-function resetData() {
-  timestamps.length = 0
-  data.length = 0
+function reset() {
+  initData()
   chart?.setOption(buildOption())
 }
 
 watch(() => props.isRuntime, (val) => {
   if (val) {
-    resetData()
+    reset()
     startTimer()
   } else {
     stopTimer()
-    resetData()
+    reset()
   }
 })
 
-// rebuild axes when scale props change
+// при изменении шкал — перестраиваем опции (оси), данные не трогаем
 watch(() => [props.yMax, props.yStep], () => {
-  chart?.setOption(buildOption())
+  chart?.setOption({
+    yAxis: { max: props.yMax, interval: props.yStep }
+  })
 })
 
-// restart timer with new interval when timeStep changes
+// при изменении количества точек — полный сброс
+watch(() => props.timePoints, () => {
+  reset()
+  chart?.setOption({ xAxis: { data: buildXLabels() } })
+  if (props.isRuntime) {
+    stopTimer()
+    startTimer()
+  }
+})
+
+// при изменении шага времени — перезапускаем таймер
 watch(() => props.timeStep, () => {
   if (props.isRuntime) {
     stopTimer()
@@ -118,6 +136,7 @@ watch(() => props.timeStep, () => {
 
 onMounted(() => {
   if (!chartEl.value) return
+  initData()
   chart = echarts.init(chartEl.value)
   chart.setOption(buildOption())
 

@@ -16,6 +16,7 @@
           :yMax="g.customProps?.yMax ?? 100"
           :yStep="g.customProps?.yStep ?? 20"
           :timeStep="g.customProps?.timeStep ?? 1"
+          :timePoints="g.customProps?.timePoints ?? 20"
           :value="getGraphValue(g)"
           :isRuntime="isRuntime"
           :style="getGraphStyle(g)"

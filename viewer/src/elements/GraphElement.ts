@@ -7,6 +7,7 @@ export interface GraphProps {
   yMax: number
   yStep: number
   timeStep: number
+  timePoints: number
   width: number
   height: number
 }
@@ -25,6 +26,7 @@ export class GraphElement extends BaseElement<GraphProps> {
       yMax: 100,
       yStep: 20,
       timeStep: 1,
+      timePoints: 20,
       width: 300,
       height: 200,
     }

@@ -159,7 +159,7 @@ const elementDisplayNames: Record<string, string> = {
   'indicator': 'Индикатор',
   'chart': 'Диаграмма',
   'thermometer': 'Термометр',
-  'tank': 'Бак',
+  'tank': 'Tank',
 }
 
 const categoryDisplayNames: Record<string, string> = {

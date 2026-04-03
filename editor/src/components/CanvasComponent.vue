@@ -29,11 +29,15 @@ import {ElementRegistry} from '../elements'
 import type {ElementType} from '../elements'
 import {setCanvas} from '../composables/useCanvas'
 import {useCanvasStore} from '../store/canvas'
+import {useEditorStore} from '../store/editor'
+import {useSessionStore} from '../store/session'
 import {DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM, zoomToPointTransform} from '../utils/zoom'
 
 const wrapper = ref<HTMLElement>()
 const cnv = ref<HTMLCanvasElement>()
 const canvasStore = useCanvasStore()
+const editorStore = useEditorStore()
+const sessionStore = useSessionStore()
 const graphs = ref<any[]>([])
 const demoSeries = [
   {
@@ -64,6 +68,90 @@ let selectionRect: fabric.Rect | null = null
 const undoStack: string[] = []
 const redoStack: string[] = []
 let clipboard: fabric.Object[] = []
+
+// ========== RUNTIME ЛОГИКА ==========
+let runtimeInterval: number | null = null
+
+// Функция получения значения переменной из хранилища
+const getVariableValue = (variableName: string): any => {
+  // Ищем переменную в backendInputs (входы)
+  if (sessionStore.backendInputs && variableName in sessionStore.backendInputs) {
+    return sessionStore.backendInputs[variableName]
+  }
+  
+  // Ищем переменную в backendOutputs (выходы)
+  if (sessionStore.backendOutputs && variableName in sessionStore.backendOutputs) {
+    return sessionStore.backendOutputs[variableName]
+  }
+  
+  console.warn(`Variable "${variableName}" not found in session store`)
+  return 0
+}
+
+// Функция обновления всех элементов в runtime режиме
+const updateRuntimeElements = () => {
+  if (!canvas || editorStore.mode !== 'runtime') return
+  
+  const objects = canvas.getObjects()
+  let hasUpdates = false
+  
+  objects.forEach(obj => {
+    // Проверяем, есть ли у объекта метод setState и bindings
+    const element = obj as any
+    if (typeof element.setState === 'function' && element.bindings) {
+      const bindings = element.bindings
+      if (bindings.inputs && Object.keys(bindings.inputs).length > 0) {
+        const state: Record<string, any> = {}
+        
+        // Для каждого привязанного входа получаем значение из хранилища
+        Object.entries(bindings.inputs).forEach(([pinName, variableName]) => {
+          if (variableName && typeof variableName === 'string' && variableName.trim()) {
+            const value = getVariableValue(variableName)
+            state[pinName] = value
+            hasUpdates = true
+          }
+        })
+        
+        // Если есть привязанные переменные, обновляем элемент
+        if (Object.keys(state).length > 0) {
+          element.setState(state)
+        }
+      }
+    }
+  })
+  
+  if (hasUpdates) {
+    canvas.requestRenderAll()
+  }
+}
+
+// Запуск runtime режима
+const startRuntime = () => {
+  if (runtimeInterval) return
+  console.log('🎬 Runtime started - updating every 1 second')
+  updateRuntimeElements() // сразу одно обновление
+  runtimeInterval = window.setInterval(updateRuntimeElements, 1000) // обновляем раз в секунду
+}
+
+// Остановка runtime режима
+const stopRuntime = () => {
+  if (runtimeInterval) {
+    console.log('⏹️ Runtime stopped')
+    clearInterval(runtimeInterval)
+    runtimeInterval = null
+  }
+}
+
+// Следим за изменением режима
+watch(() => editorStore.mode, (newMode) => {
+  console.log('Mode changed to:', newMode)
+  if (newMode === 'runtime') {
+    startRuntime()
+  } else {
+    stopRuntime()
+  }
+}, { immediate: true })
+// ========== КОНЕЦ RUNTIME ЛОГИКИ ==========
 
 function updateGraphs() {
     if (!canvas) return
@@ -540,6 +628,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+    // Останавливаем runtime при размонтировании
+    stopRuntime()
+    
     window.removeEventListener('keydown', onSpaceDown)
     window.removeEventListener('keyup', onSpaceUp)
     window.removeEventListener('keydown', handleKey)

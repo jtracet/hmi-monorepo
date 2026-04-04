@@ -91,6 +91,19 @@
         </div>
       </details>
 
+      <!-- numControl value & step -->
+      <details v-if="sel?.elementType === 'numControl'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Значение и шаг</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Значение</label>
+          <n-input-number v-model:value="propsProxy.value" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Шаг</label>
+          <n-input-number v-model:value="propsProxy.step" :min="0.0001" :step="0.1" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
       <!-- graph scale controls -->
       <details v-if="sel?.elementType === 'time-graph'" open class="mb-4">
         <summary class="cursor-pointer font-medium mb-1">Шкалы графика</summary>
@@ -268,7 +281,9 @@ const filteredKeys = computed(() =>
     k !== 'fontFamily' && 
     k !== 'fontWeight' &&
     // graph scale props are shown in dedicated section
-    !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k))
+    !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k)) &&
+    // numControl value & step shown in dedicated section
+    !(sel.value?.elementType === 'numControl' && ['value', 'step'].includes(k))
   )
 )
 

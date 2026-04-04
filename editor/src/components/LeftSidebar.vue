@@ -134,8 +134,8 @@ const expandedCategory = ref<string | null>(null)
 const expandedSubcategory = ref<Record<string, boolean>>({})
 
 const elementDisplayNames: Record<string, string> = {
-  'numInput': 'numeric: delete',
-  'numControl': 'Numeric Control',
+  'numInput': 'Numeric Input',
+  'numControl': 'Numeric Stepper',
   'numDisplay': 'Numeric Indicator',
   'toggle': 'Slide Switch',
   'slider': 'slider',

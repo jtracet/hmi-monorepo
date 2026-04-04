@@ -16,7 +16,11 @@ export class NumberControl extends BaseElement<NumControlProps> {
   static category = 'controls'
   static meta = { inputs: [] as string[], outputs: ['value'] as string[] }
 
+  private readonly centerW = 80
+  private readonly elHeight = 40
+
   private txt: fabric.Text
+  private border: fabric.Rect
   private btnLeft: fabric.Rect
   private btnRight: fabric.Rect
 
@@ -133,6 +137,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
     })
 
     this.txt = text
+    this.border = border
     this.btnLeft = btnLeft
     this.btnRight = btnRight
 
@@ -153,12 +158,15 @@ export class NumberControl extends BaseElement<NumControlProps> {
 
       if (localX < -halfCenter) {
         this.customProps.value -= this.customProps.step
+        this.updateFromProps()
+        this.emitState()
       } else if (localX > halfCenter) {
         this.customProps.value += this.customProps.step
+        this.updateFromProps()
+        this.emitState()
+      } else {
+        this.canvas?.fire('element:edit-number', { target: this })
       }
-
-      this.updateFromProps()
-      this.emitState()
     })
 
     this.on('mousemove', (e) => {
@@ -185,6 +193,29 @@ export class NumberControl extends BaseElement<NumControlProps> {
       this.btnRight.set('fill', '#e5e7eb')
       this.canvas?.requestRenderAll()
     })
+  }
+
+  getInputRect(): { width: number; height: number; offsetX: number; offsetY: number } {
+    return {
+      width:   this.border.width  ?? this.centerW,
+      height:  this.border.height ?? this.elHeight,
+      offsetX: this.border.left   ?? 0,
+      offsetY: this.border.top    ?? 0,
+    }
+  }
+
+  commitValue(raw: string) {
+    const n = Number(raw)
+    if (!Number.isFinite(n)) return
+    this.customProps.value = n
+    this.updateFromProps()
+    this.emitState()
+  }
+
+  setEditing(active: boolean) {
+    this.border.set('stroke', active ? '#3b82f6' : '#ccc')
+    this.txt.set('fill', active ? '#3b82f6' : '#000')
+    this.canvas?.requestRenderAll()
   }
 
   updateFromProps() {

@@ -6,12 +6,14 @@ interface NumInputProps {
   fontSize: number
   label: string
   labelFontSize: number
+  fontFamily?: string
+  fontWeight?: string
 }
 
 export class NumberInput extends BaseElement<NumInputProps> {
   static elementType = 'numInput'
   static category = 'controls'
-  static meta = { inputs: [], outputs: ['value'] } as const
+  static meta = { inputs: [] as string[], outputs: ['value'] as string[] }
 
   private txt: fabric.Text
   private border: fabric.Rect
@@ -26,7 +28,9 @@ export class NumberInput extends BaseElement<NumInputProps> {
       value: 0,
       fontSize: 24,
       label: 'Number Input',
-      labelFontSize: 14
+      labelFontSize: 14,
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'normal'
     }
     const p = { ...defaults, ...props }
 
@@ -54,7 +58,9 @@ export class NumberInput extends BaseElement<NumInputProps> {
       originY: 'center',
       left: 0,
       top: 0,
-      textAlign: 'center'
+      textAlign: 'center',
+      fontFamily: p.fontFamily,
+      fontWeight: p.fontWeight
     })
 
     super(canvas, x, y, [border, text], p)
@@ -71,25 +77,42 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.txt = text
     this.border = border
 
-    this.on('mouseup', () => {
-      const res = prompt('Введите число', String(this.customProps.value))
-      if (res == null) return
-
-      const n = Number(res)
-      if (!Number.isFinite(n)) return
-
-      this.customProps.value = n
-      this.updateFromProps()
-      this.emitState()
+    this.on('mouseup', (e) => {
+      e.e.preventDefault()
+      e.e.stopPropagation()
+      this.canvas?.fire('element:edit-number', { target: this })
     })
   }
 
-  updateFromProps() {
-    const displayValue = String(this.customProps.value)
+  getInputRect(): { width: number; height: number; offsetX: number; offsetY: number } {
+    return {
+      width: this.border.width ?? 120,
+      height: this.border.height ?? 40,
+      offsetX: this.border.left ?? 0,
+      offsetY: this.border.top ?? 0,
+    }
+  }
 
+  commitValue(raw: string) {
+    const n = Number(raw)
+    if (!Number.isFinite(n)) return
+    this.customProps.value = n
+    this.updateFromProps()
+    this.emitState()
+  }
+
+  setEditing(active: boolean) {
+    this.border.set('stroke', active ? '#3b82f6' : '#ccc')
+    this.txt.set('fill', active ? '#3b82f6' : '#000')
+    this.canvas?.requestRenderAll()
+  }
+
+  updateFromProps() {
     this.txt.set({
-      text: displayValue,
-      fontSize: this.customProps.fontSize
+      text: String(this.customProps.value),
+      fontSize: this.customProps.fontSize,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
+      fontWeight: this.customProps.fontWeight || 'normal'
     })
 
     this.label.set({

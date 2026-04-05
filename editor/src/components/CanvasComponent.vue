@@ -11,21 +11,145 @@
       @contextmenu="cancelSelection"
   >
     <canvas ref="cnv" class="block w-full h-full" />
+
+    <!-- inline number editor, shown over canvas in runtime -->
+    <input
+      v-if="inlineEditor.visible"
+      ref="inlineInput"
+      type="text"
+      inputmode="numeric"
+      :value="inlineEditor.raw"
+      :style="inlineEditor.style"
+      class="absolute border-2 border-blue-500 rounded text-center bg-white outline-none z-50"
+      @input="inlineEditor.raw = ($event.target as HTMLInputElement).value"
+      @keydown.enter.prevent="commitInline"
+      @keydown.escape.prevent="cancelInline"
+      @blur="commitInline"
+    />
+
+    <div class="absolute inset-0 pointer-events-none">
+      <GraphTimeSeries
+          v-for="g in graphs"
+          :key="g.id"
+          :yMax="g.customProps?.yMax ?? 100"
+          :yStep="g.customProps?.yStep ?? 20"
+          :timeStep="g.customProps?.timeStep ?? 1"
+          :timePoints="g.customProps?.timePoints ?? 20"
+          :value="getGraphValue(g)"
+          :isRuntime="isRuntime"
+          :style="getGraphStyle(g)"
+      />
+    </div>
   </div>
+  
 </template>
 
 <script setup lang="ts">
-import {onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import GraphTimeSeries from './GraphTimeSeries.vue'
+import {onBeforeUnmount, onMounted, ref, watch, computed} from 'vue'
 import {fabric} from 'fabric'
 import {ElementRegistry} from '../elements'
 import type {ElementType} from '../elements'
 import {setCanvas, isSuppressed, setSuppressSnapshots, registerHistoryControls} from '../composables/useCanvas'
 import {useCanvasStore} from '../store/canvas'
+import {useEditorStore} from '../store/editor'
+import {useSessionStore} from '../store/session'
 import {DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM, zoomToPointTransform} from '../utils/zoom'
 
 const wrapper = ref<HTMLElement>()
 const cnv = ref<HTMLCanvasElement>()
 const canvasStore = useCanvasStore()
+const editorStore = useEditorStore()
+const sessionStore = useSessionStore()
+const graphs = ref<any[]>([])
+const isRuntime = computed(() => editorStore.mode === 'runtime')
+
+// ========== INLINE NUMBER EDITOR ==========
+const inlineInput = ref<HTMLInputElement>()
+const inlineEditor = ref({
+  visible: false,
+  raw: '',
+  style: {} as Record<string, string>,
+  target: null as any,
+})
+
+function calcInlineStyle(element: any): Record<string, string> {
+  if (!canvas || !cnv.value) return {}
+
+  const zoom = canvas.getZoom()
+  const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
+  const center = element.getCenterPoint()
+
+  // use the border rect dimensions if available, otherwise fall back to group size
+  const inputRect = typeof element.getInputRect === 'function'
+    ? element.getInputRect()
+    : { width: element.width ?? 120, height: element.height ?? 40, offsetX: 0, offsetY: 0 }
+
+  const elW = inputRect.width * (element.scaleX ?? 1) * zoom
+  const elH = inputRect.height * (element.scaleY ?? 1) * zoom
+
+  // canvas-space center → screen-space (relative to canvas top-left)
+  const screenX = center.x * zoom + vpt[4]
+  const screenY = center.y * zoom + vpt[5]
+
+  // apply border's offset within the group (scaled)
+  const rectCenterX = screenX + (inputRect.offsetX ?? 0) * (element.scaleX ?? 1) * zoom
+  const rectCenterY = screenY + (inputRect.offsetY ?? 0) * (element.scaleY ?? 1) * zoom
+
+  // offset of the canvas element within the wrapper
+  const canvasRect = cnv.value.getBoundingClientRect()
+  const wrapRect = wrapper.value!.getBoundingClientRect()
+  const offsetX = canvasRect.left - wrapRect.left
+  const offsetY = canvasRect.top - wrapRect.top
+
+  return {
+    left: `${offsetX + rectCenterX - elW / 2}px`,
+    top: `${offsetY + rectCenterY - elH / 2}px`,
+    width: `${elW}px`,
+    height: `${elH}px`,
+    fontSize: `${(element.customProps.fontSize ?? 24) * zoom * (element.scaleY ?? 1)}px`,
+    fontFamily: element.customProps.fontFamily ?? 'Arial, sans-serif',
+    fontWeight: element.customProps.fontWeight ?? 'normal',
+  }
+}
+
+function refreshInlinePosition() {
+  if (!inlineEditor.value.visible || !inlineEditor.value.target) return
+  inlineEditor.value.style = calcInlineStyle(inlineEditor.value.target)
+}
+
+function openInlineEditor(element: any) {
+  if (!wrapper.value || !canvas) return
+
+  inlineEditor.value = {
+    visible: true,
+    raw: String(element.customProps.value),
+    style: calcInlineStyle(element),
+    target: element,
+  }
+
+  element.setEditing?.(true)
+
+  setTimeout(() => {
+    inlineInput.value?.focus()
+    inlineInput.value?.select()
+  }, 0)
+}
+
+function commitInline() {
+  if (!inlineEditor.value.visible) return
+  const el = inlineEditor.value.target
+  el?.commitValue?.(inlineEditor.value.raw)
+  el?.setEditing?.(false)
+  inlineEditor.value.visible = false
+}
+
+function cancelInline() {
+  if (!inlineEditor.value.visible) return
+  inlineEditor.value.target?.setEditing?.(false)
+  inlineEditor.value.visible = false
+}
+// ========== END INLINE EDITOR ==========
 
 let canvas!: fabric.Canvas
 let resizeObserver: ResizeObserver | null = null
@@ -51,6 +175,111 @@ const undoStack: string[] = []
 const redoStack: string[] = []
 let clipboard: fabric.Object[] = []
 
+// ========== RUNTIME ЛОГИКА ==========
+let runtimeInterval: number | null = null
+
+// Функция получения значения переменной из хранилища
+const getVariableValue = (variableName: string): any => {
+  // Ищем переменную в backendInputs (входы)
+  if (sessionStore.backendInputs && variableName in sessionStore.backendInputs) {
+    return sessionStore.backendInputs[variableName]
+  }
+  
+  // Ищем переменную в backendOutputs (выходы)
+  if (sessionStore.backendOutputs && variableName in sessionStore.backendOutputs) {
+    return sessionStore.backendOutputs[variableName]
+  }
+  
+  console.warn(`Variable "${variableName}" not found in session store`)
+  return 0
+}
+
+// Функция обновления всех элементов в runtime режиме
+const updateRuntimeElements = () => {
+  if (!canvas || editorStore.mode !== 'runtime') return
+  
+  const objects = canvas.getObjects()
+  let hasUpdates = false
+  
+  objects.forEach(obj => {
+    // Проверяем, есть ли у объекта метод setState и bindings
+    const element = obj as any
+    if (typeof element.setState === 'function' && element.bindings) {
+      const bindings = element.bindings
+      if (bindings.inputs && Object.keys(bindings.inputs).length > 0) {
+        const state: Record<string, any> = {}
+        
+        // Для каждого привязанного входа получаем значение из хранилища
+        Object.entries(bindings.inputs).forEach(([pinName, variableName]) => {
+          if (variableName && typeof variableName === 'string' && variableName.trim()) {
+            const value = getVariableValue(variableName)
+            state[pinName] = value
+            hasUpdates = true
+          }
+        })
+        
+        // Если есть привязанные переменные, обновляем элемент
+        if (Object.keys(state).length > 0) {
+          element.setState(state)
+        }
+      }
+    }
+  })
+  
+  if (hasUpdates) {
+    canvas.requestRenderAll()
+  }
+}
+
+// Запуск runtime режима
+const startRuntime = () => {
+  if (runtimeInterval) return
+  console.log('🎬 Runtime started - updating every 1 second')
+  updateRuntimeElements() // сразу одно обновление
+  runtimeInterval = window.setInterval(updateRuntimeElements, 1000) // обновляем раз в секунду
+}
+
+// Остановка runtime режима
+const stopRuntime = () => {
+  if (runtimeInterval) {
+    console.log('⏹️ Runtime stopped')
+    clearInterval(runtimeInterval)
+    runtimeInterval = null
+  }
+}
+
+// Следим за изменением режима
+watch(() => editorStore.mode, (newMode) => {
+  console.log('Mode changed to:', newMode)
+  if (newMode === 'runtime') {
+    startRuntime()
+  } else {
+    cancelInline()
+    stopRuntime()
+  }
+}, { immediate: true })
+// ========== КОНЕЦ RUNTIME ЛОГИКИ ==========
+
+function updateGraphs() {
+    if (!canvas) return
+
+    graphs.value = canvas.getObjects().filter(
+        (o: any) => o.elementType === 'time-graph'
+    )
+}
+function getGraphStyle(obj: any) {
+    return {
+        position: 'absolute',
+        left: obj.left + 'px',
+        top: obj.top + 'px',
+        width: obj.width * obj.scaleX + 'px',
+        height: obj.height * obj.scaleY + 'px'
+    }
+}
+
+function getGraphValue(g: any): number {
+    return typeof g.getCurrentValue === 'function' ? g.getCurrentValue() : 0
+}
 function updateSelection() {
     if (!canvas) return
     const active = canvas.getActiveObjects()
@@ -116,6 +345,16 @@ function deleteSelection() {
 }
 
 function onSpaceDown(e: KeyboardEvent) {
+    const target = e.target as HTMLElement
+    const isInputFocused = target.tagName === 'INPUT' || 
+                          target.tagName === 'TEXTAREA' || 
+                          target.isContentEditable ||
+                          target.closest('input, textarea, [contenteditable="true"]')
+    
+    if (isInputFocused) {
+        return
+    }
+    
     if (e.code !== 'Space' || isPanning) return
     isPanning = true
     canvas.selection = false
@@ -124,6 +363,16 @@ function onSpaceDown(e: KeyboardEvent) {
 }
 
 function onSpaceUp(e: KeyboardEvent) {
+    const target = e.target as HTMLElement
+    const isInputFocused = target.tagName === 'INPUT' || 
+                          target.tagName === 'TEXTAREA' || 
+                          target.isContentEditable ||
+                          target.closest('input, textarea, [contenteditable="true"]')
+    
+    if (isInputFocused) {
+        return
+    }
+    
     if (e.code !== 'Space') return
     isPanning = false
     isDragging = false
@@ -464,6 +713,7 @@ onMounted(() => {
         canvasStore.setViewportSize(rect.width, rect.height)
         updateGridBackground()
         drawGuides()
+        refreshInlinePosition()
     })
     resizeObserver.observe(wrapper.value!)
 
@@ -473,14 +723,22 @@ onMounted(() => {
     canvas.on('object:added', snapshot)
     canvas.on('object:modified', snapshot)
     canvas.on('object:removed', snapshot)
+    canvas.on('object:added', updateGraphs)
+    canvas.on('object:modified', updateGraphs)
+    canvas.on('object:removed', updateGraphs)
     canvas.on('object:moving', handleObjectMoving)
     canvas.on('mouse:wheel', handleWheel)
     canvas.on('after:render', () => {
         updateGridBackground()
         drawGuides()
+        refreshInlinePosition()
+    })
+    canvas.on('element:edit-number', (e: any) => {
+        openInlineEditor(e.target)
     })
 
     snapshot()
+    updateGraphs()
     updateSelection()
 
     window.addEventListener('keydown', onSpaceDown)
@@ -489,6 +747,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+    // Останавливаем runtime при размонтировании
+    stopRuntime()
+    
     window.removeEventListener('keydown', onSpaceDown)
     window.removeEventListener('keyup', onSpaceUp)
     window.removeEventListener('keydown', handleKey)

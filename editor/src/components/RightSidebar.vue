@@ -91,6 +91,40 @@
         </div>
       </details>
 
+      <!-- numControl value & step -->
+      <details v-if="sel?.elementType === 'numControl'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Значение и шаг</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Значение</label>
+          <n-input-number v-model:value="propsProxy.value" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Шаг</label>
+          <n-input-number v-model:value="propsProxy.step" :min="0.0001" :step="0.1" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
+      <!-- graph scale controls -->
+      <details v-if="sel?.elementType === 'time-graph'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Шкалы графика</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Макс. значение (Y)</label>
+          <n-input-number v-model:value="propsProxy.yMax" :min="1" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Шаг по Y</label>
+          <n-input-number v-model:value="propsProxy.yStep" :min="1" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Шаг по времени (сек)</label>
+          <n-input-number v-model:value="propsProxy.timeStep" :min="0.1" :step="0.5" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Точек на шкале времени</label>
+          <n-input-number v-model:value="propsProxy.timePoints" :min="2" :max="200" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
       <!-- bindings -->
       <n-tabs type="card" size="small" animated>
         <n-tab-pane name="inputs" tab="Входы (read)">
@@ -245,7 +279,11 @@ const filteredKeys = computed(() =>
     k !== 'label' && 
     k !== 'labelFontSize' && 
     k !== 'fontFamily' && 
-    k !== 'fontWeight'
+    k !== 'fontWeight' &&
+    // graph scale props are shown in dedicated section
+    !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k)) &&
+    // numControl value & step shown in dedicated section
+    !(sel.value?.elementType === 'numControl' && ['value', 'step'].includes(k))
   )
 )
 
@@ -275,13 +313,28 @@ const outputs = computed<string[]>(() => sel.value?.meta?.outputs ?? [])
 const bindings = reactive<{ inputs: Record<string, string>; outputs: Record<string, string> }>({ inputs: {}, outputs: {} })
 
 watch(sel, s => {
-  bindings.inputs = s?.bindings?.inputs ?? {}
-  bindings.outputs = s?.bindings?.outputs ?? {}
+    if (s && typeof (s as any).getBindings === 'function') {
+        const savedBindings = (s as any).getBindings()
+        bindings.inputs = savedBindings?.inputs ?? {}
+        bindings.outputs = savedBindings?.outputs ?? {}
+    } else if (s?.bindings) {
+        bindings.inputs = s.bindings.inputs ?? {}
+        bindings.outputs = s.bindings.outputs ?? {}
+    } else {
+        bindings.inputs = {}
+        bindings.outputs = {}
+    }
 }, { immediate: true })
 
 watch(bindings, () => {
-  if (!sel.value) return
-  sel.value.bindings = JSON.parse(JSON.stringify(bindings))
+    if (!sel.value) return
+    // Используем метод setBindings вместо прямого присваивания
+    if (typeof (sel.value as any).setBindings === 'function') {
+        (sel.value as any).setBindings(JSON.parse(JSON.stringify(bindings)))
+    } else {
+        // fallback для обратной совместимости
+        sel.value.bindings = JSON.parse(JSON.stringify(bindings))
+    }
 }, { deep: true })
 
 watch(propsProxy, () => {

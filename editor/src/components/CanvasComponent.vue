@@ -7,6 +7,8 @@
       @mousedown="onMouseDown"
       @mousemove="onMouseMove"
       @mouseup="onMouseUp"
+      @mouseleave="cancelSelection"
+      @contextmenu="cancelSelection"
   >
     <canvas ref="cnv" class="block w-full h-full" />
 
@@ -48,7 +50,7 @@ import {onBeforeUnmount, onMounted, ref, watch, computed} from 'vue'
 import {fabric} from 'fabric'
 import {ElementRegistry} from '../elements'
 import type {ElementType} from '../elements'
-import {setCanvas} from '../composables/useCanvas'
+import {setCanvas, isSuppressed, setSuppressSnapshots, registerHistoryControls} from '../composables/useCanvas'
 import {useCanvasStore} from '../store/canvas'
 import {useEditorStore} from '../store/editor'
 import {useSessionStore} from '../store/session'
@@ -159,6 +161,15 @@ let applyingViewFromStore = false
 let isSelecting = false
 let selectionStart = { x: 0, y: 0 }
 let selectionRect: fabric.Rect | null = null
+
+function cancelSelection() {
+    if (!isSelecting || !selectionRect) return
+    canvas.remove(selectionRect)
+    selectionRect = null
+    isSelecting = false
+    canvas.selection = true
+    canvas.requestRenderAll()
+}
 
 const undoStack: string[] = []
 const redoStack: string[] = []
@@ -276,6 +287,7 @@ function updateSelection() {
 }
 
 function snapshot() {
+    if (isSuppressed()) return
     undoStack.push(
         JSON.stringify(canvas.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta']))
     )
@@ -284,11 +296,13 @@ function snapshot() {
 }
 
 function loadState(json: any) {
+    setSuppressSnapshots(true)
     canvas.clear()
     fabric.util.enlivenObjects(json.objects ?? [], (objs: fabric.Object[]) => {
         objs.forEach(obj => canvas.add(obj))
         canvas.renderAll()
         updateSelection()
+        setSuppressSnapshots(false)
     }, 'fabric')
 }
 
@@ -376,6 +390,9 @@ function onMouseDown(e: MouseEvent) {
         return
     }
     
+    // Выделение только левой кнопкой
+    if (e.button !== 0) return
+
     // ЕСЛИ УЖЕ ЕСТЬ ВЫБРАННЫЕ ОБЪЕКТЫ - НЕ НАЧИНАЕМ ВЫДЕЛЕНИЕ
     const activeObjects = canvas.getActiveObjects()
     if (activeObjects && activeObjects.length > 0) {
@@ -529,11 +546,7 @@ function onMouseUp() {
         }
         
         // Убираем прямоугольник выделения
-        canvas.remove(selectionRect)
-        selectionRect = null
-        isSelecting = false
-        canvas.selection = true // возвращаем стандартное выделение
-        canvas.requestRenderAll()
+        cancelSelection()
     }
 }
 
@@ -631,11 +644,7 @@ function handleKey(e: KeyboardEvent) {
     }
     if (e.code === 'Escape') {
         if (isSelecting && selectionRect) {
-            canvas.remove(selectionRect)
-            selectionRect = null
-            isSelecting = false
-            canvas.selection = true
-            canvas.requestRenderAll()
+            cancelSelection()
         } else {
             canvas.discardActiveObject()
             updateSelection()
@@ -690,6 +699,11 @@ onMounted(() => {
         selectionLineWidth: 2
     })
     setCanvas(canvas)
+    registerHistoryControls(() => {
+        undoStack.length = 0
+        redoStack.length = 0
+        snapshot()
+    })
     applyViewFromStore(canvasStore.view)
     canvasStore.setViewportSize(canvas.getWidth(), canvas.getHeight())
 

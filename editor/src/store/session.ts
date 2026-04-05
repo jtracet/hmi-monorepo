@@ -45,26 +45,24 @@ export const useSessionStore = defineStore('session', {
         plant: {...empty} as RawSnapshot,
     }),
     getters: {
-        backendInputs(state) {
-            return {
-                /* ───── PLC ───── */
-                ...flattenObject(state.plc.inputs ?? {},        'outputs.inputs'),
-                ...flattenObject(state.plc.global_inputs ?? {}, 'outputs.global_inputs'),
-                ...flattenObject(state.plc.global_vars ?? {},   'outputs.global_vars'),
-
-                /* ──── PLANT ──── */
-                ...flattenObject(state.plant.inputs ?? {},        'plant_outputs.inputs'),
-                ...flattenObject(state.plant.global_inputs ?? {}, 'plant_outputs.global_inputs'),
-                ...flattenObject(state.plant.global_vars ?? {},   'plant_outputs.global_vars'),
-            }
+        controlGroups(state) {
+            return [
+                { label: 'Controller — INPUT (I)', vars: flattenObject(state.plc.inputs ?? {}, 'outputs.inputs') },
+                { label: 'Controller — GLOBAL (G)', vars: flattenObject(state.plc.global_vars ?? {}, 'outputs.global_vars') },
+                { label: 'Plant — INPUT (I)', vars: flattenObject(state.plant.inputs ?? {}, 'plant_outputs.inputs') },
+                { label: 'Plant — GLOBAL (G)', vars: flattenObject(state.plant.global_vars ?? {}, 'plant_outputs.global_vars') },
+            ]
         },
-        backendOutputs(state) {
-            return {
-                // читаем ПЛК
-                ...flattenObject(state.plc, 'outputs'),
-                // читаем модель (plant)
-                ...flattenObject(state.plant, 'plant_outputs'),
-            }
+
+        indicatorGroups(state) {
+            return [
+                { label: 'Controller — INPUT (I)', vars: flattenObject(state.plc.inputs ?? {}, 'outputs.inputs') },
+                { label: 'Controller — OUTPUT (O)', vars: flattenObject(state.plc.outputs ?? {}, 'outputs.outputs') },
+                { label: 'Controller — GLOBAL (G)', vars: flattenObject(state.plc.global_vars ?? {}, 'outputs.global_vars') },
+                { label: 'Plant — INPUT (I)', vars: flattenObject(state.plant.inputs ?? {}, 'plant_outputs.inputs') },
+                { label: 'Plant — OUTPUT (O)', vars: flattenObject(state.plant.outputs ?? {}, 'plant_outputs.outputs') },
+                { label: 'Plant — GLOBAL (G)', vars: flattenObject(state.plant.global_vars ?? {}, 'plant_outputs.global_vars') },
+            ]
         },
     },
     actions: {

@@ -10,12 +10,11 @@ export function buildInputPayload(fullPath: string, value: any) {
         return {}
     }
 
-    /*  PLC */
+    /*  PLC (Controller) */
     if (root === 'outputs') {
         if (section === 'inputs')
             return { inputs: { [name]: value } }
-
-        if (section === 'global_inputs')
+        if (section === 'global_inputs' || section === 'global_vars')
             return { global_inputs: { [name]: value } }
     }
 
@@ -23,8 +22,7 @@ export function buildInputPayload(fullPath: string, value: any) {
     if (root === 'plant_outputs') {
         if (section === 'inputs')
             return { plant_inputs: { [name]: value } }
-
-        if (section === 'global_inputs')
+        if (section === 'global_inputs' || section === 'global_vars')
             return { plant_inputs: { [name]: value } }
     }
 

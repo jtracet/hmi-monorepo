@@ -115,16 +115,9 @@
 import {ref, computed, onMounted} from 'vue'
 import {NButton} from 'naive-ui'
 import {fabric} from 'fabric'
-import {useCanvas} from '../composables/useCanvas'
+import {useCanvas, setSuppressSnapshots, resetHistory} from '../composables/useCanvas'
 import {ElementRegistry} from '../elements'
-import {useEditorStore} from '../store/editor'
 import {useCanvasStore} from '../store/canvas'
-
-const editor = useEditorStore()
-const mode = computed({
-  get: () => editor.mode,
-  set: v => editor.setMode(v)
-})
 
 const {canvas} = useCanvas()
 const canvasStore = useCanvasStore()
@@ -295,10 +288,14 @@ function doSave() {
     },
   }
   const blob = new Blob([JSON.stringify(hmi, null, 2)], {type: 'application/json'})
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.download = 'screen.hmi.json'
-  a.href = URL.createObjectURL(blob)
+  a.href = url
+  document.body.appendChild(a)
   a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 function onFile(e: Event) {
@@ -308,6 +305,7 @@ function onFile(e: Event) {
     const json = JSON.parse(text)
     const currentCanvas = canvas.value
     if (!currentCanvas) return
+    setSuppressSnapshots(true)
     currentCanvas.clear()
     fabric.util.enlivenObjects(json.canvas.objects ?? [], (objs: fabric.Object[]) => {
       objs.forEach(obj => currentCanvas.add(obj))
@@ -322,6 +320,8 @@ function onFile(e: Event) {
           showGuides: Boolean(json.grid.showGuides),
         })
       }
+      setSuppressSnapshots(false)
+      resetHistory()
     }, 'fabric')
   })
 }

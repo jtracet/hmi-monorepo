@@ -44,7 +44,17 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
 
         for (const obj of objectsCopy) {
             const type = (obj as any).elementType
-            if (!type) continue
+            if (!type) {
+                obj.set({
+                    selectable: false,
+                    evented: false,
+                    hasControls: false,
+                    lockMovementX: true,
+                    lockMovementY: true,
+                })
+                obj.setCoords()
+                continue
+            }
 
             const props = (obj as any).customProps ?? {}
             let el: fabric.Object

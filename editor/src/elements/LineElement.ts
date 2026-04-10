@@ -21,7 +21,8 @@ export class LineElement extends BaseElement<LineProps> {
             strokeWidth: p.strokeWidth,
             strokeLineCap: 'round'
         })
-        super(canvas, x, y, [l], p)
+        super(canvas, x, y, [l], p, { showBindIndicator: false })
+
         
         this.label.set({
             text: '',

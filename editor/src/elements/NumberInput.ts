@@ -82,27 +82,44 @@ export class NumberInput extends BaseElement<NumInputProps> {
 
     this.on('mouseup', (e) => {
       if (!this.isRuntime) return
-      
+
       e.e.preventDefault()
       e.e.stopPropagation()
 
-      const res = prompt('Введите число', String(this.customProps.value))
-      if (res == null) return
-
-      const n = Number(res)
-      if (!Number.isFinite(n)) return
-
-      this.customProps.value = n
-      this.updateFromProps()
-      this.emitState()
+      // fire event — CanvasComponent will show inline editor
+      this.canvas?.fire('element:edit-number', { target: this })
     })
   }
 
-  updateFromProps() {
-    const displayValue = String(this.customProps.value)
+  // returns the border rect dimensions and center offset for inline editor positioning
+  getInputRect(): { width: number; height: number; offsetX: number; offsetY: number } {
+    return {
+      width: this.border.width ?? 120,
+      height: this.border.height ?? 40,
+      offsetX: this.border.left ?? 0,
+      offsetY: this.border.top ?? 0,
+    }
+  }
 
+  // called by CanvasComponent when user confirms inline input
+  commitValue(raw: string) {
+    const n = Number(raw)
+    if (!Number.isFinite(n)) return
+    this.customProps.value = n
+    this.updateFromProps()
+    this.emitState()
+  }
+
+  // highlight border while editing
+  setEditing(active: boolean) {
+    this.border.set('stroke', active ? '#3b82f6' : '#ccc')
+    this.txt.set('fill', active ? '#3b82f6' : '#000')
+    this.canvas?.requestRenderAll()
+  }
+
+  updateFromProps() {
     this.txt.set({
-      text: displayValue,
+      text: String(this.customProps.value),
       fontSize: this.customProps.fontSize,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'

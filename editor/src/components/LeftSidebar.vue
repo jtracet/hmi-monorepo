@@ -1,5 +1,14 @@
 <template>
   <div v-bind="$attrs">
+    <n-radio-group
+        v-model:value="mode"
+        class="mb-4"
+        size="small"
+    >
+      <n-radio-button value="runtime">Тестирование</n-radio-button>
+      <n-radio-button value="design">Редактирование</n-radio-button>
+    </n-radio-group>
+    
     <div class="w-64 bg-gray-100 p-4 overflow-y-auto space-y-2 border-r" style="max-height: 600px;">
       <div 
         v-for="(categoryData, categoryKey) in paletteWithSubcategories" 
@@ -10,7 +19,7 @@
           class="flex items-center justify-between px-3 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
           @click="toggleCategory(categoryKey)"
         >
-          <h2 class="font-semibold capitalize">{{ categoryKey }}</h2>
+          <h2 class="font-semibold capitalize">{{ getCategoryDisplayName(categoryKey) }}</h2>
           <span class="text-gray-600 text-lg transition-transform" :class="{ 'rotate-180': expandedCategory === categoryKey }">
             ▼
           </span>
@@ -36,7 +45,7 @@
                   @dragstart="e => e.dataTransfer?.setData('shape', s.key)"
                   class="block w-full px-3 py-1.5 bg-white rounded shadow-sm text-left hover:bg-gray-50 active:scale-95 transition text-sm"
                 >
-                  {{ s.label }}
+                  {{ getElementDisplayName(s.key) }}
                 </button>
               </div>
             </div>
@@ -59,7 +68,7 @@
                   @dragstart="e => e.dataTransfer?.setData('shape', s.key)"
                   class="block w-full px-3 py-1.5 bg-white rounded shadow-sm text-left hover:bg-gray-50 active:scale-95 transition text-sm"
                 >
-                  {{ s.label }}
+                  {{ getElementDisplayName(s.key) }}
                 </button>
               </div>
             </div>
@@ -73,7 +82,7 @@
               @dragstart="e => e.dataTransfer?.setData('shape', s.key)"
               class="block w-full px-3 py-1.5 bg-white rounded shadow-sm text-left hover:bg-gray-50 active:scale-95 transition text-sm"
             >
-              {{ s.label }}
+              {{ getElementDisplayName(s.key) }}
             </button>
           </template>
 
@@ -116,6 +125,53 @@ const canvasStore = useCanvasStore()
 const expandedCategory = ref<string | null>(null)
 
 const expandedSubcategory = ref<Record<string, boolean>>({})
+
+const elementDisplayNames: Record<string, string> = {
+  'numInput': 'Numeric Input',
+  'numControl': 'Numeric Stepper',
+  'numDisplay': 'Numeric Indicator',
+  'toggle': 'Slide Switch',
+  'slider': 'slider',
+  'button': 'Кнопка',
+  'text': 'Текст',
+  'image': 'Image',
+  'led': 'Round LED',
+  'gauge': 'Стрелочный индикатор',
+  'progress': 'Прогресс-бар',
+  'time-graph': 'График времени',
+  'trend': 'Тренд',
+  'rectangle': 'Прямоугольник',
+  'circle': 'Круг',
+  'line': 'Line',
+  'container': 'Контейнер',
+  'graph': 'Time Graph',
+  'analog-input': 'Аналоговый ввод',
+  'digital-input': 'Дискретный ввод',
+  'meter': 'Измеритель',
+  'knob': 'Ручка',
+  'switch': 'Выключатель',
+  'indicator': 'Индикатор',
+  'chart': 'Диаграмма',
+  'thermometer': 'Термометр',
+  'tank': 'Tank',
+}
+
+const categoryDisplayNames: Record<string, string> = {
+  'numeric': 'numeric',
+  'boolean': 'boolean',
+  'graph': 'graph',
+  'decorations': 'decorations',
+  'ring': 'ring',
+  'layout': 'layout',
+}
+
+function getElementDisplayName(elementKey: string): string {
+  return elementDisplayNames[elementKey] || elementKey
+}
+
+function getCategoryDisplayName(categoryKey: string): string {
+  return categoryDisplayNames[categoryKey] || categoryKey
+}
 
 const palette: Record<string, any[]> = {
   numeric: [],

@@ -1,27 +1,52 @@
 import type {CommandDefinition} from './types'
 import {commitCanvasChange, getActiveSelection, getBoundingRect, withCanvas} from './utils'
+import type {fabric} from 'fabric'
 
-function resize(mode: 'width' | 'height' | 'both') {
+type ResizeMode = 'width' | 'height' | 'both'
+type RefStrategy = 'min' | 'max'
+
+function measureDimension(obj: fabric.Object, mode: ResizeMode): number {
+    const rect = getBoundingRect(obj)
+    if (mode === 'width') return rect.width
+    if (mode === 'height') return rect.height
+    return rect.width * rect.height
+}
+
+function findReference(objects: fabric.Object[], mode: ResizeMode, strategy: RefStrategy): fabric.Object {
+    return objects.reduce((best, obj) => {
+        const bestVal = measureDimension(best, mode)
+        const objVal = measureDimension(obj, mode)
+        return strategy === 'min'
+            ? (objVal < bestVal ? obj : best)
+            : (objVal > bestVal ? obj : best)
+    })
+}
+
+function resize(mode: ResizeMode, strategy: RefStrategy) {
     return withCanvas(canvas => {
         const {objects} = getActiveSelection(canvas)
         if (objects.length < 2) return false
 
-        const reference = objects[0]
+        const reference = findReference(objects, mode, strategy)
         const rect = getBoundingRect(reference)
         const targetWidth = rect.width
         const targetHeight = rect.height
 
-        objects.slice(1).forEach(obj => {
+        objects.forEach(obj => {
+            if (obj === reference) return
+            const objRect = getBoundingRect(obj)
+
             if (mode === 'width' || mode === 'both') {
-                if (targetWidth > 0 && typeof obj.scaleToWidth === 'function') {
-                    obj.scaleToWidth(targetWidth)
+                if (targetWidth > 0 && objRect.width > 0) {
+                    obj.scaleX = (obj.scaleX ?? 1) * (targetWidth / objRect.width)
                 }
             }
             if (mode === 'height' || mode === 'both') {
-                if (targetHeight > 0 && typeof obj.scaleToHeight === 'function') {
-                    obj.scaleToHeight(targetHeight)
+                if (targetHeight > 0 && objRect.height > 0) {
+                    obj.scaleY = (obj.scaleY ?? 1) * (targetHeight / objRect.height)
                 }
             }
+
             obj.setCoords()
         })
 
@@ -34,27 +59,45 @@ const enabled = () => withCanvas(canvas => getActiveSelection(canvas).objects.le
 
 export const resizeCommands: CommandDefinition[] = [
     {
-        id: 'resize:match-width',
+        id: 'resize:match-width-min',
         section: 'resize',
-        label: 'Match Width',
-        hotkey: 'ctrl+shift+w',
-        run: () => resize('width'),
+        label: 'Smallest Width',
+        run: () => resize('width', 'min'),
         isEnabled: enabled,
     },
     {
-        id: 'resize:match-height',
+        id: 'resize:match-width-max',
         section: 'resize',
-        label: 'Match Height',
-        hotkey: 'ctrl+shift+h',
-        run: () => resize('height'),
+        label: 'Largest Width',
+        run: () => resize('width', 'max'),
         isEnabled: enabled,
     },
     {
-        id: 'resize:match-both',
+        id: 'resize:match-height-min',
         section: 'resize',
-        label: 'Match Size',
-        hotkey: 'ctrl+shift+b',
-        run: () => resize('both'),
+        label: 'Smallest Height',
+        run: () => resize('height', 'min'),
+        isEnabled: enabled,
+    },
+    {
+        id: 'resize:match-height-max',
+        section: 'resize',
+        label: 'Largest Height',
+        run: () => resize('height', 'max'),
+        isEnabled: enabled,
+    },
+    {
+        id: 'resize:match-both-min',
+        section: 'resize',
+        label: 'Smallest Size',
+        run: () => resize('both', 'min'),
+        isEnabled: enabled,
+    },
+    {
+        id: 'resize:match-both-max',
+        section: 'resize',
+        label: 'Largest Size',
+        run: () => resize('both', 'max'),
         isEnabled: enabled,
     },
 ]

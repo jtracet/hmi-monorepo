@@ -7,6 +7,8 @@
       @mousedown="onMouseDown"
       @mousemove="onMouseMove"
       @mouseup="onMouseUp"
+      @mouseleave="cancelSelection"
+      @contextmenu.prevent="cancelSelection"
   >
     <canvas ref="cnv" class="block w-full h-full" />
 
@@ -367,6 +369,15 @@ function onSpaceUp(e: KeyboardEvent) {
     e.preventDefault()
 }
 
+function cancelSelection() {
+    if (!isSelecting || !selectionRect) return
+    canvas.remove(selectionRect)
+    selectionRect = null
+    isSelecting = false
+    canvas.selection = true
+    canvas.requestRenderAll()
+}
+
 function onMouseDown(e: MouseEvent) {
     if (isPanning) {
         isDragging = true
@@ -375,6 +386,9 @@ function onMouseDown(e: MouseEvent) {
         e.preventDefault()
         return
     }
+
+    // только левая кнопка
+    if (e.button !== 0) return
     
     // ЕСЛИ УЖЕ ЕСТЬ ВЫБРАННЫЕ ОБЪЕКТЫ - НЕ НАЧИНАЕМ ВЫДЕЛЕНИЕ
     const activeObjects = canvas.getActiveObjects()

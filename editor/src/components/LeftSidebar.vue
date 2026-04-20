@@ -306,23 +306,67 @@ function onFile(e: Event) {
   if (!f || !canvas.value) return
   f.text().then(text => {
     const json = JSON.parse(text)
-    const currentCanvas = canvas.value
-    if (!currentCanvas) return
-    currentCanvas.clear()
-    fabric.util.enlivenObjects(json.canvas.objects ?? [], (objs: fabric.Object[]) => {
-      objs.forEach(obj => currentCanvas.add(obj))
-      currentCanvas.renderAll()
-      if (json.view) {
-        canvasStore.setViewportTransform(json.view)
+    const c = canvas.value
+    if (!c) return
+
+    if (json.grid) {
+      canvasStore.setGridState({
+        showGrid: Boolean(json.grid.showGrid),
+        snapToGrid: Boolean(json.grid.snapToGrid),
+        showGuides: Boolean(json.grid.showGuides),
+      })
+    }
+
+    const objects = json.canvas?.objects ?? []
+    c.clear()
+
+    for (const obj of objects) {
+      const type = obj.elementType
+      if (!type) continue
+
+      if (type === 'image') {
+        fabric.util.enlivenObjects([obj], (objs: fabric.Object[]) => {
+          const img = objs[0]
+          if (!img) return
+          img.set({ selectable: true, evented: true })
+          c.add(img)
+          c.requestRenderAll()
+        }, 'fabric')
+        continue
       }
-      if (json.grid) {
-        canvasStore.setGridState({
-          showGrid: Boolean(json.grid.showGrid),
-          snapToGrid: Boolean(json.grid.snapToGrid),
-          showGuides: Boolean(json.grid.showGuides),
-        })
+
+      const Ctor = ElementRegistry[type as keyof typeof ElementRegistry]
+      if (!Ctor) {
+        console.warn('[load] unknown elementType, skipping:', type)
+        continue
       }
-    }, 'fabric')
+
+      const props = obj.customProps ?? {}
+      const el = new Ctor(c, obj.left ?? 0, obj.top ?? 0, props)
+
+      el.id = obj.id || crypto.randomUUID()
+
+      const bindings = obj.bindingsData ?? obj.bindings ?? { inputs: {}, outputs: {} }
+      if (typeof (el as any).setBindings === 'function') {
+        ;(el as any).setBindings(bindings)
+      }
+
+      el.set({
+        scaleX: obj.scaleX ?? 1,
+        scaleY: obj.scaleY ?? 1,
+        angle: obj.angle ?? 0,
+        flipX: obj.flipX ?? false,
+        flipY: obj.flipY ?? false,
+      })
+      el.setCoords()
+      ;(el as any).updateFromProps?.()
+    }
+
+    c.requestRenderAll()
+
+    if (json.view) {
+      canvasStore.setViewportTransform(json.view)
+    }
   })
 }
 </script>

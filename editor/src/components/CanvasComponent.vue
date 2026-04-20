@@ -211,6 +211,7 @@ const updateRuntimeElements = () => {
         
         // Если есть привязанные переменные, обновляем элемент
         if (Object.keys(state).length > 0) {
+          console.log(state);
           element.setState(state)
         }
       }
@@ -735,6 +736,30 @@ onMounted(() => {
     })
     canvas.on('element:edit-number', (e: any) => {
         openInlineEditor(e.target)
+    })
+
+    canvas.on('element:output', (e: any) => {
+        const el = e.target
+        if (!el?.bindings?.outputs) return
+        const path = el.bindings.outputs[e.name]
+        if (!path) return
+
+        const [root, section, ...rest] = path.split('.')
+        const name = rest.join('.')
+        if (!name) return
+
+        let payload: Record<string, any> = {}
+        if (root === 'outputs') {
+            if (section === 'inputs') payload = { inputs: { [name]: e.value } }
+            else if (section === 'global_inputs') payload = { global_inputs: { [name]: e.value } }
+        } else if (root === 'plant_outputs') {
+            if (section === 'inputs') payload = { plant_inputs: { [name]: e.value } }
+            else if (section === 'global_inputs') payload = { plant_inputs: { [name]: e.value } }
+        }
+
+        if (Object.keys(payload).length > 0) {
+            sessionStore.sendInputs(payload).catch(console.error)
+        }
     })
 
     snapshot()

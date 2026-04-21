@@ -189,7 +189,11 @@ const palette: Record<string, any[]> = {
   layout: [],
 }
 
+// 'time-graph' is an alias for loading saved files, not a separate palette item
+const PALETTE_SKIP = new Set(['time-graph'])
+
 Object.entries(ElementRegistry).forEach(([key, ctor]) => {
+  if (PALETTE_SKIP.has(key)) return
   const category = (ctor as any).category || 'decorations'
   const elementType = (ctor as any).elementType || key
   const subcategory = (ctor as any).subcategory

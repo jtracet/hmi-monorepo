@@ -30,6 +30,7 @@
     <div class="absolute inset-0 pointer-events-none">
       <GraphTimeSeries
           v-for="g in graphs"
+          v-show="!movingGraphIds.has(g.id)"
           :key="g.id"
           :yMax="g.customProps?.yMax ?? 100"
           :yStep="g.customProps?.yStep ?? 20"
@@ -62,6 +63,7 @@ const canvasStore = useCanvasStore()
 const editorStore = useEditorStore()
 const sessionStore = useSessionStore()
 const graphs = ref<any[]>([])
+const movingGraphIds = ref<Set<string>>(new Set())
 const isRuntime = computed(() => editorStore.mode === 'runtime')
 
 // ========== INLINE NUMBER EDITOR ==========
@@ -728,6 +730,22 @@ onMounted(() => {
     canvas.on('object:modified', updateGraphs)
     canvas.on('object:removed', updateGraphs)
     canvas.on('object:moving', handleObjectMoving)
+    canvas.on('object:moving', (e: fabric.IEvent<Event>) => {
+        const obj = e.target as any
+        if (obj?.elementType === 'time-graph' && obj.id) {
+            movingGraphIds.value = new Set([...movingGraphIds.value, obj.id])
+        }
+    })
+    canvas.on('object:modified', () => {
+        movingGraphIds.value = new Set()
+        updateGraphs()
+    })
+    canvas.on('mouse:up', () => {
+        if (movingGraphIds.value.size > 0) {
+            movingGraphIds.value = new Set()
+            updateGraphs()
+        }
+    })
     canvas.on('mouse:wheel', handleWheel)
     canvas.on('after:render', () => {
         updateGridBackground()

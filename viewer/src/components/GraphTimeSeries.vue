@@ -18,6 +18,7 @@ const props = defineProps<{
 const chartEl = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 let timer: number | null = null
+let resizeObserver: ResizeObserver | null = null
 
 let data: number[] = []
 
@@ -111,6 +112,12 @@ onMounted(() => {
   chart = echarts.init(chartEl.value)
   chart.setOption(buildOption())
   if (props.isRuntime) startTimer()
+
+  resizeObserver = new ResizeObserver(() => {
+    chart?.resize()
+  })
+  resizeObserver.observe(chartEl.value)
+
   window.addEventListener('resize', resize)
 })
 
@@ -118,6 +125,7 @@ function resize() { chart?.resize() }
 
 onBeforeUnmount(() => {
   stopTimer()
+  resizeObserver?.disconnect()
   window.removeEventListener('resize', resize)
   chart?.dispose()
 })

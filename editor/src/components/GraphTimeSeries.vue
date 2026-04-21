@@ -18,6 +18,7 @@ const props = defineProps<{
 const chartEl = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 let timer: number | null = null
+let resizeObserver: ResizeObserver | null = null
 
 // Фиксированный массив данных, всегда длиной timePoints, заполнен нулями
 let data: number[] = []
@@ -144,6 +145,12 @@ onMounted(() => {
     startTimer()
   }
 
+  // ResizeObserver следит за размером контейнера (меняется при zoom/scale через CSS)
+  resizeObserver = new ResizeObserver(() => {
+    chart?.resize()
+  })
+  resizeObserver.observe(chartEl.value)
+
   window.addEventListener('resize', resize)
 })
 
@@ -151,6 +158,7 @@ function resize() { chart?.resize() }
 
 onBeforeUnmount(() => {
   stopTimer()
+  resizeObserver?.disconnect()
   window.removeEventListener('resize', resize)
   chart?.dispose()
 })

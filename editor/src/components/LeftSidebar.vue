@@ -387,9 +387,22 @@ function loadCanvasFromJson(c: fabric.Canvas, canvasJson: { objects: any[] }) {
       angle: obj.angle ?? 0,
       flipX: obj.flipX ?? false,
       flipY: obj.flipY ?? false,
+      hasControls: false,
+      lockScalingX: true,
+      lockScalingY: true,
+      lockRotation: true,
     })
     el.setCoords()
     ;(el as any).updateFromProps?.()
+  }
+
+  // Прогреваем oCoords через цикл ActiveSelection → discard,
+  // иначе findTarget после загрузки находит устаревший кеш и контролы не работают
+  const allObjects = c.getObjects()
+  if (allObjects.length > 0) {
+    const warmup = new fabric.ActiveSelection(allObjects, { canvas: c })
+    c.setActiveObject(warmup)
+    c.discardActiveObject()
   }
 
   c.requestRenderAll()

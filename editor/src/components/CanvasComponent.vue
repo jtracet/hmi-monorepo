@@ -63,6 +63,7 @@ const canvasStore = useCanvasStore()
 const editorStore = useEditorStore()
 const sessionStore = useSessionStore()
 const graphs = ref<any[]>([])
+const graphsVersion = ref(0)  // инкрементируется при zoom/pan для пересчёта стилей
 const movingGraphIds = ref<Set<string>>(new Set())
 const isRuntime = computed(() => editorStore.mode === 'runtime')
 
@@ -262,12 +263,20 @@ function updateGraphs() {
     )
 }
 function getGraphStyle(obj: any) {
+    void graphsVersion.value  // реактивная зависимость — пересчитывается при zoom/pan
+    if (!canvas) return { position: 'absolute', left: '0px', top: '0px', width: '0px', height: '0px' }
+    const zoom = canvas.getZoom()
+    const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
+    const screenLeft = obj.left * zoom + vpt[4]
+    const screenTop  = obj.top  * zoom + vpt[5]
+    const screenW    = obj.width  * (obj.scaleX ?? 1) * zoom
+    const screenH    = obj.height * (obj.scaleY ?? 1) * zoom
     return {
         position: 'absolute',
-        left: obj.left + 'px',
-        top: obj.top + 'px',
-        width: obj.width * obj.scaleX + 'px',
-        height: obj.height * obj.scaleY + 'px'
+        left:   screenLeft + 'px',
+        top:    screenTop  + 'px',
+        width:  screenW    + 'px',
+        height: screenH    + 'px',
     }
 }
 
@@ -393,14 +402,12 @@ function onMouseDown(e: MouseEvent) {
     // только левая кнопка
     if (e.button !== 0) return
     
-    // ЕСЛИ УЖЕ ЕСТЬ ВЫБРАННЫЕ ОБЪЕКТЫ - НЕ НАЧИНАЕМ ВЫДЕЛЕНИЕ
-    const activeObjects = canvas.getActiveObjects()
-    if (activeObjects && activeObjects.length > 0) {
-        return
-    }
+    // Проверяем, кликнули ли на объект — если да, Fabric сам обработает
+    const pointer = canvas.getPointer(e as unknown as MouseEvent)
+    const target = canvas.findTarget(e as unknown as MouseEvent, false)
+    if (target) return  // Fabric обработает нативно
     
     // Если не зажат Space и не панорамируем - начинаем выделение
-    const pointer = canvas.getPointer(e as unknown as MouseEvent)
     selectionStart = { x: pointer.x, y: pointer.y }
     isSelecting = true
     
@@ -505,7 +512,7 @@ function onMouseMove(e: MouseEvent) {
     }
 }
 
-function onMouseUp() {
+function onMouseUp(e?: MouseEvent) {
     if (isPanning) {
         isDragging = false
         canvas.defaultCursor = 'grab'
@@ -513,43 +520,48 @@ function onMouseUp() {
     }
     
     if (isSelecting && selectionRect) {
-        // Завершаем выделение
-        const pointer = canvas.getPointer(event as unknown as MouseEvent)
+        const nativeEvent = e ?? (event as unknown as MouseEvent)
+        const pointer = canvas.getPointer(nativeEvent as unknown as MouseEvent)
         const left = Math.min(selectionStart.x, pointer.x)
         const top = Math.min(selectionStart.y, pointer.y)
         const width = Math.abs(pointer.x - selectionStart.x)
         const height = Math.abs(pointer.y - selectionStart.y)
         
-        // Если область выделения достаточно большая
+        // Убираем прямоугольник выделения до создания selection
+        canvas.remove(selectionRect)
+        selectionRect = null
+        isSelecting = false
+        canvas.selection = true
+
         if (width > 5 && height > 5) {
-            const selectionArea = new fabric.Rect({
-                left,
-                top,
-                width,
-                height,
-                absolutePositioned: true
-            })
+            const selectionArea = new fabric.Rect({ left, top, width, height, absolutePositioned: true })
             
-            // Выделяем объекты, попадающие в область
             const objects = canvas.getObjects().filter(obj => {
-                if (obj === selectionRect || obj === selectionArea) return false
+                if (obj === selectionArea) return false
                 return obj.intersectsWithObject(selectionArea) || 
                        obj.isContainedWithinObject(selectionArea) ||
                        selectionArea.isContainedWithinObject(obj)
             })
             
-            if (objects.length > 0) {
+            if (objects.length === 1) {
+                // Один объект — просто выделяем его напрямую
+                canvas.setActiveObject(objects[0])
+            } else if (objects.length > 1) {
+                // Несколько объектов — сначала сбрасываем координаты каждого
+                objects.forEach(obj => obj.setCoords())
                 const selection = new fabric.ActiveSelection(objects, { canvas: canvas })
+                // Запрещаем масштабирование для ActiveSelection
+                selection.set({
+                    hasControls: false,
+                    lockScalingX: true,
+                    lockScalingY: true,
+                    lockRotation: true,
+                })
                 canvas.setActiveObject(selection)
-                updateSelection()
             }
+            updateSelection()
         }
         
-        // Убираем прямоугольник выделения
-        canvas.remove(selectionRect)
-        selectionRect = null
-        isSelecting = false
-        canvas.selection = true // возвращаем стандартное выделение
         canvas.requestRenderAll()
     }
 }
@@ -587,11 +599,25 @@ function handleDrop(e: DragEvent) {
     canvas.requestRenderAll()
 }
 
+let zoomHideTimer: number | null = null
+
 function handleWheel(opt: fabric.IEvent<WheelEvent>) {
     const event = opt.e
     if (!(event.ctrlKey || event.metaKey) || !canvas) return
     event.preventDefault()
     event.stopPropagation()
+
+    // Скрываем графики во время зума
+    const graphIds = graphs.value.map((g: any) => g.id).filter(Boolean)
+    if (graphIds.length > 0) {
+        movingGraphIds.value = new Set(graphIds)
+        if (zoomHideTimer) clearTimeout(zoomHideTimer)
+        zoomHideTimer = window.setTimeout(() => {
+            movingGraphIds.value = new Set()
+            updateGraphs()
+            zoomHideTimer = null
+        }, 150)
+    }
 
     const currentZoom = canvas.getZoom()
     const zoomFactor = Math.pow(1.1, -event.deltaY / 100)
@@ -736,6 +762,12 @@ onMounted(() => {
             movingGraphIds.value = new Set([...movingGraphIds.value, obj.id])
         }
     })
+    canvas.on('object:scaling', (e: fabric.IEvent<Event>) => {
+        const obj = e.target as any
+        if (obj?.elementType === 'time-graph' && obj.id) {
+            movingGraphIds.value = new Set([...movingGraphIds.value, obj.id])
+        }
+    })
     canvas.on('object:modified', () => {
         movingGraphIds.value = new Set()
         updateGraphs()
@@ -751,6 +783,7 @@ onMounted(() => {
         updateGridBackground()
         drawGuides()
         refreshInlinePosition()
+        graphsVersion.value++  // триггерим пересчёт позиций графиков
     })
     canvas.on('element:edit-number', (e: any) => {
         openInlineEditor(e.target)
@@ -821,6 +854,9 @@ function loadPage(canvasJson: any | null, view?: { zoom: number; offsetX: number
   undoStack.length = 0
   redoStack.length = 0
 
+  // Отключаем snapshot во время загрузки чтобы не засорять undoStack
+  canvas.off('object:added', snapshot)
+
   if (canvasJson?.objects?.length) {
     for (const obj of canvasJson.objects) {
       const type = obj.elementType
@@ -854,10 +890,28 @@ function loadPage(canvasJson: any | null, view?: { zoom: number; offsetX: number
         angle: obj.angle ?? 0,
         flipX: obj.flipX ?? false,
         flipY: obj.flipY ?? false,
+        // Явно сбрасываем в исходное состояние после загрузки
+        hasControls: false,
+        lockScalingX: true,
+        lockScalingY: true,
+        lockRotation: true,
       })
       el.setCoords()
       ;(el as any).updateFromProps?.()
     }
+  }
+
+  // Возвращаем listener и делаем один снапшот финального состояния
+  canvas.on('object:added', snapshot)
+
+  // "Прогреваем" oCoords всех объектов через цикл ActiveSelection → discard.
+  const allObjects = canvas.getObjects()
+  console.log('[loadPage] objects after load:', allObjects.length, allObjects.map((o: any) => ({ id: o.id, type: o.elementType, oCoords: o.oCoords })))
+  if (allObjects.length > 0) {
+    const warmup = new fabric.ActiveSelection(allObjects, { canvas })
+    canvas.setActiveObject(warmup)
+    canvas.discardActiveObject()
+    console.log('[loadPage] after warmup oCoords:', allObjects.map((o: any) => ({ id: o.id, oCoords: o.oCoords })))
   }
 
   canvas.requestRenderAll()

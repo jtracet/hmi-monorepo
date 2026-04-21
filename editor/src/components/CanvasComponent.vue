@@ -808,4 +808,68 @@ watch(() => ({...canvasStore.view}), view => {
 watch(() => canvasStore.grid.showGrid, updateGridBackground)
 watch(() => canvasStore.grid.size, updateGridBackground)
 watch(() => canvasStore.grid.showGuides, () => drawGuides())
+
+// ========== PAGE SERIALIZATION ==========
+function serializePage() {
+  if (!canvas) return null
+  return canvas.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta'])
+}
+
+function loadPage(canvasJson: any | null, view?: { zoom: number; offsetX: number; offsetY: number } | null) {
+  if (!canvas) return
+  canvas.clear()
+  undoStack.length = 0
+  redoStack.length = 0
+
+  if (canvasJson?.objects?.length) {
+    for (const obj of canvasJson.objects) {
+      const type = obj.elementType
+      if (!type) continue
+
+      if (type === 'image') {
+        fabric.util.enlivenObjects([obj], (objs: fabric.Object[]) => {
+          const img = objs[0]
+          if (!img) return
+          img.set({ selectable: true, evented: true })
+          canvas.add(img)
+          canvas.requestRenderAll()
+        }, 'fabric')
+        continue
+      }
+
+      const Ctor = ElementRegistry[type as ElementType]
+      if (!Ctor) continue
+
+      const el = new Ctor(canvas, obj.left ?? 0, obj.top ?? 0, obj.customProps ?? {})
+      el.id = obj.id || crypto.randomUUID()
+
+      const bindings = obj.bindingsData ?? obj.bindings ?? { inputs: {}, outputs: {} }
+      if (typeof (el as any).setBindings === 'function') {
+        ;(el as any).setBindings(bindings)
+      }
+
+      el.set({
+        scaleX: obj.scaleX ?? 1,
+        scaleY: obj.scaleY ?? 1,
+        angle: obj.angle ?? 0,
+        flipX: obj.flipX ?? false,
+        flipY: obj.flipY ?? false,
+      })
+      el.setCoords()
+      ;(el as any).updateFromProps?.()
+    }
+  }
+
+  canvas.requestRenderAll()
+  updateGraphs()
+  updateSelection()
+  snapshot()
+
+  if (view) {
+    canvasStore.setViewportTransform(view)
+  }
+}
+
+defineExpose({ serializePage, loadPage })
+// ========== END PAGE SERIALIZATION ==========
 </script>

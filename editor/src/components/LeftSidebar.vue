@@ -119,6 +119,7 @@ import {useCanvas} from '../composables/useCanvas'
 import {ElementRegistry} from '../elements'
 import {useEditorStore} from '../store/editor'
 import {useCanvasStore} from '../store/canvas'
+import {usePagesStore} from '../store/pages'
 
 const editor = useEditorStore()
 const mode = computed({
@@ -128,6 +129,7 @@ const mode = computed({
 
 const {canvas} = useCanvas()
 const canvasStore = useCanvasStore()
+const pagesStore = usePagesStore()
 
 const expandedCategory = ref<string | null>(null)
 
@@ -283,15 +285,16 @@ function openFileDialog() {
 
 function doSave() {
   if (!canvas.value) return
+
+  // Save current page state first
+  const currentCanvasJson = canvas.value.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta'])
+  const currentView = canvasStore.serializeView()
+  pagesStore.saveCurrentPageState(currentCanvasJson, currentView)
+
   const hmi = {
-    meta: {version: '1.0', created: new Date().toISOString()},
-    canvas: canvas.value.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta']),
-    bindings: canvas.value.getObjects().map((o: fabric.Object & {id?: string; bindings?: any}) => ({
-      elementId: o.id,
-      inputBindings: o.bindings?.inputs ?? {},
-      outputBindings: o.bindings?.outputs ?? {},
-    })),
-    view: canvasStore.serializeView(),
+    meta: {version: '2.0', created: new Date().toISOString()},
+    pages: pagesStore.serialize(),
+    activePageId: pagesStore.activePageId,
     grid: {
       showGrid: canvasStore.grid.showGrid,
       snapToGrid: canvasStore.grid.snapToGrid,
@@ -321,57 +324,74 @@ function onFile(e: Event) {
       })
     }
 
+    // New multi-page format (version 2.0+)
+    if (json.pages && Array.isArray(json.pages)) {
+      pagesStore.restore(json.pages, json.activePageId)
+      const activePage = pagesStore.activePage
+      if (activePage?.canvasJson) {
+        loadCanvasFromJson(c, activePage.canvasJson)
+        if (activePage.view) canvasStore.setViewportTransform(activePage.view)
+      } else {
+        c.clear()
+        c.requestRenderAll()
+      }
+      return
+    }
+
+    // Legacy single-page format (version 1.0)
     const objects = json.canvas?.objects ?? []
-    c.clear()
-
-    for (const obj of objects) {
-      const type = obj.elementType
-      if (!type) continue
-
-      if (type === 'image') {
-        fabric.util.enlivenObjects([obj], (objs: fabric.Object[]) => {
-          const img = objs[0]
-          if (!img) return
-          img.set({ selectable: true, evented: true })
-          c.add(img)
-          c.requestRenderAll()
-        }, 'fabric')
-        continue
-      }
-
-      const Ctor = ElementRegistry[type as keyof typeof ElementRegistry]
-      if (!Ctor) {
-        console.warn('[load] unknown elementType, skipping:', type)
-        continue
-      }
-
-      const props = obj.customProps ?? {}
-      const el = new Ctor(c, obj.left ?? 0, obj.top ?? 0, props)
-
-      el.id = obj.id || crypto.randomUUID()
-
-      const bindings = obj.bindingsData ?? obj.bindings ?? { inputs: {}, outputs: {} }
-      if (typeof (el as any).setBindings === 'function') {
-        ;(el as any).setBindings(bindings)
-      }
-
-      el.set({
-        scaleX: obj.scaleX ?? 1,
-        scaleY: obj.scaleY ?? 1,
-        angle: obj.angle ?? 0,
-        flipX: obj.flipX ?? false,
-        flipY: obj.flipY ?? false,
-      })
-      el.setCoords()
-      ;(el as any).updateFromProps?.()
-    }
-
-    c.requestRenderAll()
-
-    if (json.view) {
-      canvasStore.setViewportTransform(json.view)
-    }
+    loadCanvasFromJson(c, { objects })
+    if (json.view) canvasStore.setViewportTransform(json.view)
   })
+}
+
+function loadCanvasFromJson(c: fabric.Canvas, canvasJson: { objects: any[] }) {
+  const objects = canvasJson?.objects ?? []
+  c.clear()
+
+  for (const obj of objects) {
+    const type = obj.elementType
+    if (!type) continue
+
+    if (type === 'image') {
+      fabric.util.enlivenObjects([obj], (objs: fabric.Object[]) => {
+        const img = objs[0]
+        if (!img) return
+        img.set({ selectable: true, evented: true })
+        c.add(img)
+        c.requestRenderAll()
+      }, 'fabric')
+      continue
+    }
+
+    const Ctor = ElementRegistry[type as keyof typeof ElementRegistry]
+    if (!Ctor) {
+      console.warn('[load] unknown elementType, skipping:', type)
+      continue
+    }
+
+    const props = obj.customProps ?? {}
+    const el = new Ctor(c, obj.left ?? 0, obj.top ?? 0, props)
+
+    el.id = obj.id || crypto.randomUUID()
+
+    const bindings = obj.bindingsData ?? obj.bindings ?? { inputs: {}, outputs: {} }
+    if (typeof (el as any).setBindings === 'function') {
+      ;(el as any).setBindings(bindings)
+    }
+
+    el.set({
+      scaleX: obj.scaleX ?? 1,
+      scaleY: obj.scaleY ?? 1,
+      angle: obj.angle ?? 0,
+      flipX: obj.flipX ?? false,
+      flipY: obj.flipY ?? false,
+    })
+    el.setCoords()
+    ;(el as any).updateFromProps?.()
+  }
+
+  c.requestRenderAll()
 }
 </script>
 

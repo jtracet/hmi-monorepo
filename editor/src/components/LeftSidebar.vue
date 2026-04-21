@@ -10,6 +10,7 @@
     </n-radio-group>
     
     <div class="w-64 bg-gray-100 p-4 overflow-y-auto space-y-2 border-r" style="max-height: 600px;">
+      <h style="font-size: 18px;"><b>Элементы</b></h>
       <div 
         v-for="(categoryData, categoryKey) in paletteWithSubcategories" 
         :key="categoryKey"

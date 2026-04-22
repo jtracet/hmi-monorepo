@@ -41,6 +41,7 @@
 
 <script setup lang="ts">
 import { shallowRef, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+
 import { fabric } from 'fabric'
 import { setCanvas } from '@/composables/useCanvas'
 import { useHmiRuntime, type HmiFile } from '@/runtime/useHmiRuntime'
@@ -57,6 +58,7 @@ const wrap = shallowRef<HTMLElement>()
 const cnv = shallowRef<HTMLCanvasElement>()
 const inlineInput = ref<HTMLInputElement>()
 const graphs = ref<any[]>([])
+const graphsVersion = ref(0)
 
 const store = useViewerCanvasStore()
 
@@ -145,6 +147,7 @@ function drawGuides() {
 }
 
 function getGraphStyle(obj: any) {
+  void graphsVersion.value
   return {
     position: 'absolute',
     left: obj.left + 'px',
@@ -155,6 +158,7 @@ function getGraphStyle(obj: any) {
 }
 
 function getGraphValue(g: any) {
+  void graphsVersion.value
   return typeof g.getCurrentValue === 'function' ? g.getCurrentValue() : 0
 }
 
@@ -278,7 +282,7 @@ onMounted(() => {
 
   canvas.on('object:added', updateGraphs)
   canvas.on('object:removed', updateGraphs)
-  canvas.on('after:render', refreshInlinePosition)
+  canvas.on('after:render', () => { refreshInlinePosition(); graphsVersion.value++ })
   canvas.on('element:edit-number', (e: any) => openInlineEditor(e.target))
 
   resizeObserver = new ResizeObserver(([entry]) => {

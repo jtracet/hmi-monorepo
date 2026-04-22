@@ -6,8 +6,14 @@ import {useSessionStore} from '@/store/session'
 
 export interface HmiFile {
     meta: { version: string; created: string }
-    canvas: any
+    // v2.0 format
+    pages?: Array<{ id: string; name: string; canvasJson: any; view: any }>
+    activePageId?: string
+    // v1.0 legacy format
+    canvas?: any
     bindings?: BindingMap[]
+    view?: any
+    grid?: any
 }
 
 interface BindingMap {
@@ -26,8 +32,17 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
             return
         }
 
-        const rawObjs = hmi.canvas?.objects
-        console.debug('[runtime] hmi.canvas.objects length:', rawObjs?.length)
+        // Поддержка v2.0 (pages) и v1.0 (canvas.objects)
+        let rawObjs: any[]
+        if (hmi.pages && Array.isArray(hmi.pages)) {
+            const activeId = hmi.activePageId
+            const activePage = hmi.pages.find(p => p.id === activeId) ?? hmi.pages[0]
+            rawObjs = activePage?.canvasJson?.objects ?? []
+        } else {
+            rawObjs = hmi.canvas?.objects ?? []
+        }
+
+        console.debug('[runtime] objects to load:', rawObjs?.length)
         canvas.clear()
 
         await new Promise<void>((done) => {

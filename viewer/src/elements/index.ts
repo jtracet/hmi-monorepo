@@ -6,6 +6,7 @@ import {NumberInput} from './NumberInput'
 import {NumberControl} from './NumberControl'
 import {NumberDisplay} from './NumberDisplay'
 import {GraphElement} from './GraphElement'
+import {Tank} from './Tank'
 
 export const ElementRegistry: Record<string, any> = {
     led: LedIndicator,
@@ -16,7 +17,8 @@ export const ElementRegistry: Record<string, any> = {
     numControl: NumberControl,
     numDisplay: NumberDisplay,
     graph: GraphElement,
-    'time-graph': GraphElement,  // alias — elementType used in saved files
+    'time-graph': GraphElement,
+    tank: Tank,
 }
 
 export type ElementType = keyof typeof ElementRegistry

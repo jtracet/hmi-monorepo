@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="$attrs" class="w-64 bg-gray-50 border-l p-4 overflow-y-auto text-sm">
+  <div v-bind="$attrs" class="w-80 bg-gray-50 border-l p-4 overflow-y-auto text-sm">
     <template v-if="sel">
       <h2 class="font-semibold text-lg mb-3 capitalize">{{ sel.elementType }}</h2>
 
@@ -290,20 +290,22 @@ const filteredKeys = computed(() =>
 /* bindings */
 const ss = useSessionStore()
 
-/*
-function cleanVariableName(varName: string): string {
-  return varName.replace(/^[^.]+\./, '')
-} */
+function buildGroupedOptions(groups: { label: string; vars: Record<string, any> }[]) {
+  return groups
+    .filter(g => Object.keys(g.vars).length > 0)
+    .map(g => ({
+      type: 'group' as const,
+      label: g.label,
+      key: g.label,
+      children: Object.keys(g.vars).map(k => {
+        const shortName = k.split('.').slice(2).join('.') || k
+        return { label: shortName, value: k, title: k }
+      }),
+    }))
+}
 
-const makeOpts = (obj: Record<string, any>) => 
-  Object.keys(obj).map(k => ({ 
-    label: k,
-    value: k,
-    title: k
-  }))
-
-const backendInputsOptions = computed(() => makeOpts(ss.backendInputs))
-const backendOutputsOptions = computed(() => makeOpts(ss.backendOutputs))
+const backendInputsOptions = computed(() => buildGroupedOptions(ss.controlGroups))
+const backendOutputsOptions = computed(() => buildGroupedOptions(ss.indicatorGroups))
 
 const inputs = computed<string[]>(() => sel.value?.meta?.inputs ?? [])
 const outputs = computed<string[]>(() => sel.value?.meta?.outputs ?? [])

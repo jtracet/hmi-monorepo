@@ -116,7 +116,7 @@
 import {ref, computed, onMounted} from 'vue'
 import {NButton} from 'naive-ui'
 import {fabric} from 'fabric'
-import {useCanvas} from '../composables/useCanvas'
+import {useCanvas, setSuppressSnapshots, resetHistory} from '../composables/useCanvas'
 import {ElementRegistry} from '../elements'
 import {useEditorStore} from '../store/editor'
 import {useCanvasStore} from '../store/canvas'
@@ -133,7 +133,6 @@ const canvasStore = useCanvasStore()
 const pagesStore = usePagesStore()
 
 const expandedCategory = ref<string | null>(null)
-
 const expandedSubcategory = ref<Record<string, boolean>>({})
 
 const elementDisplayNames: Record<string, string> = {
@@ -202,58 +201,30 @@ Object.entries(ElementRegistry).forEach(([key, ctor]) => {
   const subcategory = (ctor as any).subcategory
   
   if (palette.hasOwnProperty(category)) {
-    palette[category].push({
-      key,
-      label: elementType,
-      subcategory,
-    })
+    palette[category].push({ key, label: elementType, subcategory })
   } else {
     console.warn(`Category "${category}" not found in palette, adding to decorations`)
-    palette.decorations.push({
-      key,
-      label: elementType,
-      subcategory,
-    })
+    palette.decorations.push({ key, label: elementType, subcategory })
   }
 })
 
 const paletteWithSubcategories = computed(() => {
   const result: Record<string, any> = {}
-  
   Object.entries(palette).forEach(([categoryKey, items]) => {
     const hasSubcategories = items.some(item => item.subcategory)
-    
     if (hasSubcategories) {
-      const subcategories: Record<string, any[]> = {
-        controls: [],
-        indicators: []
-      }
-      
+      const subcategories: Record<string, any[]> = { controls: [], indicators: [] }
       const itemsWithoutSubcategory: any[] = []
-      
       items.forEach(item => {
-        if (item.subcategory === 'controls') {
-          subcategories.controls.push(item)
-        } else if (item.subcategory === 'indicators') {
-          subcategories.indicators.push(item)
-        } else {
-          itemsWithoutSubcategory.push(item)
-        }
+        if (item.subcategory === 'controls') subcategories.controls.push(item)
+        else if (item.subcategory === 'indicators') subcategories.indicators.push(item)
+        else itemsWithoutSubcategory.push(item)
       })
-      
-      result[categoryKey] = {
-        hasSubcategories: true,
-        subcategories,
-        items: itemsWithoutSubcategory
-      }
+      result[categoryKey] = { hasSubcategories: true, subcategories, items: itemsWithoutSubcategory }
     } else {
-      result[categoryKey] = {
-        hasSubcategories: false,
-        items
-      }
+      result[categoryKey] = { hasSubcategories: false, items }
     }
   })
-  
   return result
 })
 
@@ -273,9 +244,7 @@ function toggleSubcategory(categoryKey: string, subcategoryKey: string) {
 
 onMounted(() => {
   const firstCategory = Object.keys(palette)[0]
-  if (firstCategory) {
-    expandedCategory.value = firstCategory
-  }
+  if (firstCategory) expandedCategory.value = firstCategory
 })
 
 const fileInp = ref<HTMLInputElement | null>(null)
@@ -305,8 +274,11 @@ function doSave() {
   const blob = new Blob([JSON.stringify(hmi, null, 2)], {type: 'application/json'})
   const a = document.createElement('a')
   a.download = 'screen.hmi.json'
-  a.href = URL.createObjectURL(blob)
+  a.href = url
+  document.body.appendChild(a)
   a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 function onFile(e: Event) {

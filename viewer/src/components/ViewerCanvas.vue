@@ -1,8 +1,14 @@
 <template>
-  <div ref="wrap" class="flex-1 h-full min-w-0 relative overflow-hidden">
-    <canvas ref="cnv" class="block w-full h-full"/>
+  <div
+    ref="wrap"
+    class="flex-1 h-full min-w-0 relative overflow-hidden"
+    @mousedown="onMouseDown"
+    @mousemove="onMouseMove"
+    @mouseup="onMouseUp"
+    @mouseleave="onMouseUp"
+  >
+    <canvas ref="cnv" class="block w-full h-full" />
 
-    <!-- inline number editor -->
     <input
       v-if="inlineEditor.visible"
       ref="inlineInput"
@@ -34,18 +40,33 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, ref, onMounted, watch } from 'vue'
+import { shallowRef, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { fabric } from 'fabric'
 import { setCanvas } from '@/composables/useCanvas'
 import { useHmiRuntime, type HmiFile } from '@/runtime/useHmiRuntime'
+import { useViewerCanvasStore } from '@/store/canvas'
 import GraphTimeSeries from './GraphTimeSeries.vue'
+
+const DEFAULT_MIN_ZOOM = 0.25
+const DEFAULT_MAX_ZOOM = 4
+const VIEWPORT_PADDING = 40
 
 const props = defineProps<{ hmi: HmiFile | null }>()
 
 const wrap = shallowRef<HTMLElement>()
 const cnv = shallowRef<HTMLCanvasElement>()
-const graphs = ref<any[]>([])
 const inlineInput = ref<HTMLInputElement>()
+const graphs = ref<any[]>([])
+
+const store = useViewerCanvasStore()
+
+let canvas!: fabric.Canvas
+let resizeObserver: ResizeObserver | null = null
+let runtime: ReturnType<typeof useHmiRuntime> | null = null
+
+let isPanning = false
+let isDragging = false
+let lastPos = { x: 0, y: 0 }
 
 const inlineEditor = ref({
   visible: false,
@@ -54,78 +75,73 @@ const inlineEditor = ref({
   target: null as any,
 })
 
-let _canvas: fabric.Canvas | null = null
-
-function calcInlineStyle(element: any): Record<string, string> {
-  if (!_canvas || !cnv.value || !wrap.value) return {}
-
-  const zoom = _canvas.getZoom()
-  const vpt = _canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
-  const center = element.getCenterPoint()
-
-  const inputRect = typeof element.getInputRect === 'function'
-    ? element.getInputRect()
-    : { width: element.width ?? 120, height: element.height ?? 40, offsetX: 0, offsetY: 0 }
-
-  const elW = inputRect.width * (element.scaleX ?? 1) * zoom
-  const elH = inputRect.height * (element.scaleY ?? 1) * zoom
-
-  const screenX = center.x * zoom + vpt[4]
-  const screenY = center.y * zoom + vpt[5]
-
-  const rectCenterX = screenX + (inputRect.offsetX ?? 0) * (element.scaleX ?? 1) * zoom
-  const rectCenterY = screenY + (inputRect.offsetY ?? 0) * (element.scaleY ?? 1) * zoom
-
-  const canvasRect = cnv.value.getBoundingClientRect()
-  const wrapRect = wrap.value.getBoundingClientRect()
-  const offsetX = canvasRect.left - wrapRect.left
-  const offsetY = canvasRect.top - wrapRect.top
-
-  return {
-    left: `${offsetX + rectCenterX - elW / 2}px`,
-    top: `${offsetY + rectCenterY - elH / 2}px`,
-    width: `${elW}px`,
-    height: `${elH}px`,
-    fontSize: `${(element.customProps.fontSize ?? 24) * zoom * (element.scaleY ?? 1)}px`,
-    fontFamily: element.customProps.fontFamily ?? 'Arial, sans-serif',
-    fontWeight: element.customProps.fontWeight ?? 'normal',
-  }
+function clampZoom(z: number) {
+  return Math.min(DEFAULT_MAX_ZOOM, Math.max(DEFAULT_MIN_ZOOM, z))
 }
 
-function refreshInlinePosition() {
-  if (!inlineEditor.value.visible || !inlineEditor.value.target) return
-  inlineEditor.value.style = calcInlineStyle(inlineEditor.value.target)
+function syncViewToStore() {
+  const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
+  store.setViewportTransform({
+    zoom: canvas.getZoom(),
+    offsetX: vpt[4] ?? 0,
+    offsetY: vpt[5] ?? 0,
+  })
 }
 
-function openInlineEditor(element: any) {
-  if (!wrap.value || !_canvas) return
+function applyTransform(t: { zoom: number; offsetX: number; offsetY: number }) {
+  canvas.setViewportTransform([t.zoom, 0, 0, t.zoom, t.offsetX, t.offsetY])
+  canvas.requestRenderAll()
+  store.setViewportTransform(t)
+  updateGridBackground()
+  drawGuides()
+}
 
-  inlineEditor.value = {
-    visible: true,
-    raw: String(element.customProps.value),
-    style: calcInlineStyle(element),
-    target: element,
+function updateGridBackground() {
+  if (!wrap.value || !store.grid.showGrid) {
+    if (wrap.value) wrap.value.style.backgroundImage = ''
+    return
   }
 
-  element.setEditing?.(true)
-  setTimeout(() => {
-    inlineInput.value?.focus()
-    inlineInput.value?.select()
-  }, 0)
+  const zoom = canvas.getZoom()
+  const size = Math.max(store.grid.size * zoom, 1)
+  const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
+  const color = 'rgba(99,102,241,0.16)'
+
+  wrap.value.style.backgroundImage =
+    `linear-gradient(0deg, ${color} 1px, transparent 1px),
+     linear-gradient(90deg, ${color} 1px, transparent 1px)`
+
+  wrap.value.style.backgroundSize = `${size}px ${size}px`
+
+  const offsetX = ((vpt[4] ?? 0) % size + size) % size
+  const offsetY = ((vpt[5] ?? 0) % size + size) % size
+
+  wrap.value.style.backgroundPosition = `${offsetX}px ${offsetY}px`
 }
 
-function commitInline() {
-  if (!inlineEditor.value.visible) return
-  const el = inlineEditor.value.target
-  el?.commitValue?.(inlineEditor.value.raw)
-  el?.setEditing?.(false)
-  inlineEditor.value.visible = false
-}
+function drawGuides() {
+  const ctx = (canvas as any).contextTop
+  if (!ctx) return
 
-function cancelInline() {
-  if (!inlineEditor.value.visible) return
-  inlineEditor.value.target?.setEditing?.(false)
-  inlineEditor.value.visible = false
+  canvas.clearContext(ctx)
+
+  if (!store.grid.showGuides) return
+
+  const width = canvas.getWidth()
+  const height = canvas.getHeight()
+
+  ctx.save()
+  ctx.strokeStyle = 'rgba(99,102,241,0.4)'
+  ctx.lineWidth = 1
+
+  ctx.beginPath()
+  ctx.moveTo(width / 2, 0)
+  ctx.lineTo(width / 2, height)
+  ctx.moveTo(0, height / 2)
+  ctx.lineTo(width, height / 2)
+  ctx.stroke()
+
+  ctx.restore()
 }
 
 function getGraphStyle(obj: any) {
@@ -138,45 +154,162 @@ function getGraphStyle(obj: any) {
   }
 }
 
-function getGraphValue(g: any): number {
+function getGraphValue(g: any) {
   return typeof g.getCurrentValue === 'function' ? g.getCurrentValue() : 0
 }
 
-function updateGraphs(canvas: fabric.Canvas) {
-  graphs.value = canvas.getObjects().filter((o: any) => o.elementType === 'time-graph')
+function updateGraphs() {
+  graphs.value = canvas
+    .getObjects()
+    .filter((o: any) => o.elementType === 'time-graph')
 }
 
-const runtime = shallowRef<ReturnType<typeof useHmiRuntime>>()
+function calcInlineStyle(element: any): Record<string, string> {
+  const zoom = canvas.getZoom()
+  const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
+  const center = element.getCenterPoint()
+
+  const w = (element.width ?? 120) * (element.scaleX ?? 1) * zoom
+  const h = (element.height ?? 40) * (element.scaleY ?? 1) * zoom
+
+  const screenX = center.x * zoom + vpt[4]
+  const screenY = center.y * zoom + vpt[5]
+
+  const canvasRect = cnv.value!.getBoundingClientRect()
+  const wrapRect = wrap.value!.getBoundingClientRect()
+
+  const offsetX = canvasRect.left - wrapRect.left
+  const offsetY = canvasRect.top - wrapRect.top
+
+  return {
+    left: `${offsetX + screenX - w / 2}px`,
+    top: `${offsetY + screenY - h / 2}px`,
+    width: `${w}px`,
+    height: `${h}px`,
+  }
+}
+
+function refreshInlinePosition() {
+  if (!inlineEditor.value.visible) return
+  inlineEditor.value.style = calcInlineStyle(inlineEditor.value.target)
+}
+
+function openInlineEditor(el: any) {
+  inlineEditor.value = {
+    visible: true,
+    raw: String(el.customProps.value),
+    style: calcInlineStyle(el),
+    target: el,
+  }
+
+  setTimeout(() => {
+    inlineInput.value?.focus()
+    inlineInput.value?.select()
+  })
+}
+
+function commitInline() {
+  if (!inlineEditor.value.visible) return
+  inlineEditor.value.target?.commitValue?.(inlineEditor.value.raw)
+  inlineEditor.value.visible = false
+}
+
+function cancelInline() {
+  inlineEditor.value.visible = false
+}
+
+function onSpaceDown(e: KeyboardEvent) {
+  if (e.code !== 'Space' || isPanning) return
+  isPanning = true
+  canvas.defaultCursor = 'grab'
+}
+
+function onSpaceUp(e: KeyboardEvent) {
+  if (e.code !== 'Space') return
+  isPanning = false
+  isDragging = false
+  canvas.defaultCursor = 'default'
+}
+
+function onMouseDown(e: MouseEvent) {
+  if (!isPanning) return
+  isDragging = true
+  canvas.defaultCursor = 'grabbing'
+  lastPos = { x: e.clientX, y: e.clientY }
+}
+
+function onMouseMove(e: MouseEvent) {
+  if (!isDragging) return
+
+  const vpt = canvas.viewportTransform!
+  const dx = e.clientX - lastPos.x
+  const dy = e.clientY - lastPos.y
+  const zoom = canvas.getZoom()
+
+  vpt[4] += dx * zoom
+  vpt[5] += dy * zoom
+
+  lastPos = { x: e.clientX, y: e.clientY }
+
+  canvas.requestRenderAll()
+  syncViewToStore()
+  updateGridBackground()
+}
+
+function onMouseUp() {
+  isDragging = false
+}
 
 onMounted(() => {
-  const canvas = new fabric.Canvas(cnv.value!, { selection: false })
-  _canvas = canvas
+  canvas = new fabric.Canvas(cnv.value!, { selection: false })
+
   setCanvas(canvas)
 
-  const ro = new ResizeObserver(([entry]) => {
+  runtime = useHmiRuntime(canvas)
+
+  canvas.on('object:added', updateGraphs)
+  canvas.on('object:removed', updateGraphs)
+  canvas.on('after:render', refreshInlinePosition)
+  canvas.on('element:edit-number', (e: any) => openInlineEditor(e.target))
+
+  resizeObserver = new ResizeObserver(([entry]) => {
     canvas.setDimensions({
       width: entry.contentRect.width,
       height: entry.contentRect.height,
     })
+    updateGridBackground()
+    drawGuides()
   })
-  wrap.value && ro.observe(wrap.value)
 
-  canvas.on('object:added', () => updateGraphs(canvas))
-  canvas.on('object:removed', () => updateGraphs(canvas))
-  canvas.on('after:render', () => refreshInlinePosition())
-  canvas.on('element:edit-number', (e: any) => openInlineEditor(e.target))
+  wrap.value && resizeObserver.observe(wrap.value)
 
-  runtime.value = useHmiRuntime(canvas)
-  if (props.hmi) runtime.value.loadHmi(props.hmi)
+  window.addEventListener('keydown', onSpaceDown)
+  window.addEventListener('keyup', onSpaceUp)
+
+  if (props.hmi && runtime) {
+    runtime.loadHmi(props.hmi)
+  }
 })
 
 watch(
   () => props.hmi,
   (file) => {
-    if (file && runtime.value) {
+    if (file && runtime) {
       cancelInline()
-      runtime.value.loadHmi(file)
+      runtime.loadHmi(file)
     }
   }
 )
+
+watch(() => store.grid.showGrid, updateGridBackground)
+watch(() => store.grid.size, updateGridBackground)
+watch(() => store.grid.showGuides, drawGuides)
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onSpaceDown)
+  window.removeEventListener('keyup', onSpaceUp)
+
+  resizeObserver?.disconnect()
+  canvas.dispose()
+})
 </script>

@@ -1,5 +1,4 @@
 import {defineStore} from 'pinia'
-import {flattenObject} from '@/utils/flatten'
 import {deepMerge} from '@/utils/deepMerge'
 import {makeEmpty} from '@/utils/snapshot'
 import {api} from '@/api'
@@ -45,27 +44,7 @@ export const useSessionStore = defineStore('session', {
         plc:   makeEmpty(),
         plant: makeEmpty(),
     }),
-    getters: {
-        backendInputs(state) {
-            const merged = {
-                inputs:        { ...state.plc.inputs,   ...state.plant.inputs },
-                global_inputs: { ...state.plc.global_inputs, ...state.plant.global_inputs },
-                global_vars:   { ...state.plc.global_vars,   ...state.plant.global_vars },
-            }
-            return {
-                ...flattenObject(merged.inputs,        'inputs'),
-                ...flattenObject(merged.global_inputs, 'global_inputs'),
-                ...flattenObject(merged.global_vars,   'global_vars'),
-            }
-        },
-        backendOutputs(state) {
-            const merged = {
-                ...state.plc.outputs,
-                ...state.plant.outputs,
-            }
-            return flattenObject(merged)
-        },
-    },
+    getters: {},
     actions: {
         setSession(id: string) {
             this.sessionId = id

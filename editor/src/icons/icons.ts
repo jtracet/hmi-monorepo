@@ -15,9 +15,12 @@ export type IconName =
     | 'lucide:distribute-vertical'
     | 'lucide:space-horizontal'
     | 'lucide:space-vertical'
-    | 'lucide:match-width'
-    | 'lucide:match-height'
-    | 'lucide:match-both'
+    | 'lucide:match-width-min'
+    | 'lucide:match-width-max'
+    | 'lucide:match-height-min'
+    | 'lucide:match-height-max'
+    | 'lucide:match-both-min'
+    | 'lucide:match-both-max'
     | 'lucide:group'
     | 'lucide:ungroup'
     | 'lucide:lock'
@@ -183,30 +186,52 @@ const icons: Record<IconName, IconDefinition> = {
             {type: 'line', x1: 12, y1: 10, x2: 12, y2: 14},
         ],
     },
-    'lucide:match-width': {
+    'lucide:match-width-min': {
         viewBox: '0 0 24 24',
         elements: [
-            {type: 'rect', x: 6, y: 7, width: 12, height: 10, rx: 1, fill: 'none'},
-            {type: 'line', x1: 4, y1: 12, x2: 6, y2: 12},
-            {type: 'line', x1: 18, y1: 12, x2: 20, y2: 12},
+            {type: 'rect', x: 7, y: 4, width: 10, height: 4, rx: 1, fill: 'currentColor'},
+            {type: 'rect', x: 4, y: 16, width: 16, height: 4, rx: 1, fill: 'none'},
+            {type: 'path', d: 'M10 10.5 L12 13 L14 10.5'},
         ],
     },
-    'lucide:match-height': {
+    'lucide:match-width-max': {
         viewBox: '0 0 24 24',
         elements: [
-            {type: 'rect', x: 7, y: 6, width: 10, height: 12, rx: 1, fill: 'none'},
-            {type: 'line', x1: 12, y1: 4, x2: 12, y2: 6},
-            {type: 'line', x1: 12, y1: 18, x2: 12, y2: 20},
+            {type: 'rect', x: 4, y: 4, width: 16, height: 4, rx: 1, fill: 'currentColor'},
+            {type: 'rect', x: 7, y: 16, width: 10, height: 4, rx: 1, fill: 'none'},
+            {type: 'path', d: 'M10 10.5 L12 13 L14 10.5'},
         ],
     },
-    'lucide:match-both': {
+    'lucide:match-height-min': {
         viewBox: '0 0 24 24',
         elements: [
-            {type: 'rect', x: 7, y: 7, width: 10, height: 10, rx: 2, fill: 'none'},
-            {type: 'line', x1: 12, y1: 4, x2: 12, y2: 7},
-            {type: 'line', x1: 12, y1: 17, x2: 12, y2: 20},
-            {type: 'line', x1: 4, y1: 12, x2: 7, y2: 12},
-            {type: 'line', x1: 17, y1: 12, x2: 20, y2: 12},
+            {type: 'rect', x: 4, y: 8, width: 4, height: 8, rx: 1, fill: 'currentColor'},
+            {type: 'rect', x: 16, y: 4, width: 4, height: 16, rx: 1, fill: 'none'},
+            {type: 'path', d: 'M10.5 10 L13 12 L10.5 14'},
+        ],
+    },
+    'lucide:match-height-max': {
+        viewBox: '0 0 24 24',
+        elements: [
+            {type: 'rect', x: 4, y: 4, width: 4, height: 16, rx: 1, fill: 'currentColor'},
+            {type: 'rect', x: 16, y: 8, width: 4, height: 8, rx: 1, fill: 'none'},
+            {type: 'path', d: 'M10.5 10 L13 12 L10.5 14'},
+        ],
+    },
+    'lucide:match-both-min': {
+        viewBox: '0 0 24 24',
+        elements: [
+            {type: 'rect', x: 3, y: 9, width: 6, height: 6, rx: 1, fill: 'currentColor'},
+            {type: 'rect', x: 14, y: 5, width: 7, height: 14, rx: 1, fill: 'none'},
+            {type: 'path', d: 'M10.5 10 L13 12 L10.5 14'},
+        ],
+    },
+    'lucide:match-both-max': {
+        viewBox: '0 0 24 24',
+        elements: [
+            {type: 'rect', x: 3, y: 5, width: 8, height: 14, rx: 1, fill: 'currentColor'},
+            {type: 'rect', x: 15, y: 9, width: 6, height: 6, rx: 1, fill: 'none'},
+            {type: 'path', d: 'M12.5 10 L15 12 L12.5 14'},
         ],
     },
     'lucide:group': {

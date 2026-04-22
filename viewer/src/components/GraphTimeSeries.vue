@@ -20,17 +20,24 @@ let chart: echarts.ECharts | null = null
 let timer: number | null = null
 let resizeObserver: ResizeObserver | null = null
 
-let data: number[] = []
-
-function initData() {
-  data = Array(props.timePoints).fill(0)
-}
+let buffer: number[] = []
 
 function buildXLabels(): string[] {
   return Array.from({ length: props.timePoints }, (_, i) => String(i - (props.timePoints - 1)))
 }
 
+function buildSeriesData(): (number | null)[] {
+  const total = props.timePoints
+  const len = buffer.length
+  const result: (number | null)[] = Array(total).fill(null)
+  for (let i = 0; i < len; i++) {
+    result[total - len + i] = buffer[i]
+  }
+  return result
+}
+
 function buildOption() {
+  const hasData = props.isRuntime && buffer.length > 0
   return {
     backgroundColor: '#0f172a',
     animation: false,
@@ -56,21 +63,29 @@ function buildOption() {
     series: [{
       name: 'value',
       type: 'line',
-      showSymbol: true,
-      symbol: 'circle',
+      showSymbol: hasData,
+      symbol: hasData ? 'circle' : 'none',
       symbolSize: 5,
       smooth: false,
-      lineStyle: { width: 2, color: '#22c55e' },
+      lineStyle: { width: hasData ? 2 : 0, color: '#22c55e' },
       itemStyle: { color: '#22c55e' },
-      data: [...data],
+      connectNulls: false,
+      data: buildSeriesData(),
     }],
   }
 }
 
 function addPoint() {
-  data.shift()
-  data.push(props.value)
-  chart?.setOption({ series: [{ data: [...data] }] })
+  buffer.push(props.value)
+  if (buffer.length > props.timePoints) buffer.shift()
+  chart?.setOption({
+    series: [{
+      data: buildSeriesData(),
+      showSymbol: true,
+      symbol: 'circle',
+      lineStyle: { width: 2 },
+    }]
+  })
 }
 
 function startTimer() {
@@ -83,7 +98,7 @@ function stopTimer() {
 }
 
 function reset() {
-  initData()
+  buffer = []
   chart?.setOption(buildOption())
 }
 
@@ -108,7 +123,6 @@ watch(() => props.timeStep, () => {
 
 onMounted(() => {
   if (!chartEl.value) return
-  initData()
   chart = echarts.init(chartEl.value)
   chart.setOption(buildOption())
   if (props.isRuntime) startTimer()

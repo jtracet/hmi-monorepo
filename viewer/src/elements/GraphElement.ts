@@ -62,7 +62,7 @@ export class GraphElement extends BaseElement<GraphProps> {
       fontSize: p.labelFontSize,
       originX: 'center',
       originY: 'top',
-      top: p.height / 2 + 5,
+      top: p.height / 2 + 25,
       left: 0,
     })
   }

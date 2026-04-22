@@ -153,10 +153,36 @@ let clipboard: fabric.Object[] = []
 let runtimeInterval: number | null = null
 
 const getVariableValue = (variableName: string): any => {
-  if (sessionStore.backendInputs && variableName in sessionStore.backendInputs) return sessionStore.backendInputs[variableName]
-  if (sessionStore.backendOutputs && variableName in sessionStore.backendOutputs) return sessionStore.backendOutputs[variableName]
-  console.warn(`Variable "${variableName}" not found in session store`)
-  return 0
+  // variableName формат: "outputs.inputs.varName" или "plant_outputs.outputs.varName"
+  const parts = variableName.split('.')
+  if (parts.length < 3) {
+    console.warn(`Invalid variable path: "${variableName}"`)
+    return 0
+  }
+  
+  const [root, section, ...rest] = parts
+  const varPath = rest.join('.')
+  
+  let source: any = null
+  if (root === 'outputs') source = sessionStore.plc
+  else if (root === 'plant_outputs') source = sessionStore.plant
+  else {
+    console.warn(`Unknown root in variable path: "${root}"`)
+    return 0
+  }
+  
+  // section: inputs, outputs, global_vars, global_inputs
+  const sectionData = source?.[section] ?? source?.[section.replace('_', '')] ?? {}
+  
+  // Достаём значение по пути varPath из sectionData
+  const value = varPath.split('.').reduce((obj, key) => obj?.[key], sectionData)
+  
+  if (value === undefined) {
+    console.warn(`Variable "${variableName}" not found in session store`)
+    return 0
+  }
+  
+  return value
 }
 
 const updateRuntimeElements = () => {

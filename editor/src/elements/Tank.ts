@@ -16,6 +16,8 @@ interface TankProps {
   label: string
   labelFontSize: number
   orientation: 'vertical' | 'horizontal'
+  fontFamily?: string
+  fontWeight?: string
 }
 
 export class Tank extends BaseElement<TankProps> {
@@ -50,7 +52,9 @@ export class Tank extends BaseElement<TankProps> {
       valueFontSize: 12,
       label: 'Tank',
       labelFontSize: 14,
-      orientation: 'vertical'
+      orientation: 'vertical',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'normal'
     }
 
     const p = { ...defaults, ...props }
@@ -91,7 +95,8 @@ export class Tank extends BaseElement<TankProps> {
       originY: 'center',
       left: 0,
       top: -p.height / 2 + 15,
-      fontWeight: 'bold'
+      fontWeight: p.fontWeight ?? 'bold',
+      fontFamily: p.fontFamily ?? 'Arial, sans-serif'
     })
 
     super(canvas, x, y, [container, fillRect, valueText], p)
@@ -157,13 +162,17 @@ export class Tank extends BaseElement<TankProps> {
 
     this.valueText.set({
       fontSize: p.valueFontSize,
-      top: -p.height / 2 + 15
+      top: -p.height / 2 + 15,
+      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
+      fontWeight: p.fontWeight ?? 'normal'
     })
 
     this.label.set({
       text: p.label,
       fontSize: p.labelFontSize,
-      top: p.height / 2 + 10
+      top: p.height / 2 + 10,
+      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
+      fontWeight: p.fontWeight ?? 'normal'
     })
 
     this.updateIndicatorPosition()

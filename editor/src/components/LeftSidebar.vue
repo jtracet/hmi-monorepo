@@ -272,6 +272,7 @@ function doSave() {
     },
   }
   const blob = new Blob([JSON.stringify(hmi, null, 2)], {type: 'application/json'})
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.download = 'screen.hmi.json'
   a.href = url

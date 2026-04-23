@@ -6,8 +6,9 @@ import {NumberInput} from './NumberInput'
 import {NumberControl} from './NumberControl'
 import {NumberDisplay} from './NumberDisplay'
 import {GraphElement} from './GraphElement'
+import {Tank} from './Tank'
 
-export const ElementRegistry = {
+export const ElementRegistry: Record<string, any> = {
     led: LedIndicator,
     toggle: ToggleButton,
     image: ImageElement,
@@ -16,6 +17,8 @@ export const ElementRegistry = {
     numControl: NumberControl,
     numDisplay: NumberDisplay,
     graph: GraphElement,
-} as const
+    'time-graph': GraphElement,
+    tank: Tank,
+}
 
 export type ElementType = keyof typeof ElementRegistry

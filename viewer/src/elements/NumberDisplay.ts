@@ -10,7 +10,8 @@ interface NumDisplayProps {
 
 export class NumberDisplay extends BaseElement<NumDisplayProps> {
   static elementType = 'numDisplay'
-  static category = 'indicators'
+  static category = 'numeric'
+  static subcategory = 'indicators'
   
   static meta = { inputs: ['value'], outputs: [] } as const
 
@@ -26,7 +27,7 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
     const defaults: NumDisplayProps = {
       fontSize: 24,
       precision: 2,
-      label: 'Number Display',
+      label: 'Numeric Indicator',
       labelFontSize: 14
     }
     const p = { ...defaults, ...props }

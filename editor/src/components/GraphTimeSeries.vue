@@ -18,20 +18,30 @@ const props = defineProps<{
 const chartEl = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 let timer: number | null = null
+let resizeObserver: ResizeObserver | null = null
 
-// Фиксированный массив данных, всегда длиной timePoints, заполнен нулями
-let data: number[] = []
-
-function initData() {
-  data = Array(props.timePoints).fill(0)
-}
+// Накапливаемый буфер — растёт справа, максимум timePoints точек
+let buffer: number[] = []
 
 // Метки оси X: от -(N-1) до 0, фиксированные
 function buildXLabels(): string[] {
   return Array.from({ length: props.timePoints }, (_, i) => String(i - (props.timePoints - 1)))
 }
 
+// Данные для серии: буфер выровнен по правому краю, левая часть — null (нет данных)
+function buildSeriesData(): (number | null)[] {
+  const total = props.timePoints
+  const len = buffer.length
+  const result: (number | null)[] = Array(total).fill(null)
+  // заполняем с правого края
+  for (let i = 0; i < len; i++) {
+    result[total - len + i] = buffer[i]
+  }
+  return result
+}
+
 function buildOption() {
+  const hasData = props.isRuntime && buffer.length > 0
   return {
     backgroundColor: '#0f172a',
     animation: false,
@@ -43,10 +53,7 @@ function buildOption() {
       boundaryGap: false,
       axisLine: { lineStyle: { color: '#94a3b8' } },
       axisLabel: { color: '#94a3b8', fontSize: 10 },
-      splitLine: {
-        show: true,
-        lineStyle: { color: '#1e293b' }
-      },
+      splitLine: { show: true, lineStyle: { color: '#1e293b' } },
     },
     yAxis: {
       type: 'value',
@@ -55,31 +62,34 @@ function buildOption() {
       interval: props.yStep,
       axisLine: { lineStyle: { color: '#94a3b8' } },
       axisLabel: { color: '#94a3b8', fontSize: 10 },
-      splitLine: {
-        show: true,
-        lineStyle: { color: '#1e293b' }
-      },
+      splitLine: { show: true, lineStyle: { color: '#1e293b' } },
     },
     series: [{
       name: 'value',
       type: 'line',
-      showSymbol: true,
-      symbol: 'circle',
+      showSymbol: hasData,
+      symbol: hasData ? 'circle' : 'none',
       symbolSize: 5,
       smooth: false,
-      lineStyle: { width: 2, color: '#22c55e' },
+      lineStyle: { width: hasData ? 2 : 0, color: '#22c55e' },
       itemStyle: { color: '#22c55e' },
-      data: [...data],
+      connectNulls: false,
+      data: buildSeriesData(),
     }],
   }
 }
 
 function addPoint() {
-  // сдвигаем влево, новое значение справа
-  data.shift()
-  data.push(props.value)
-  // обновляем только серию, не трогаем оси
-  chart?.setOption({ series: [{ data: [...data] }] })
+  buffer.push(props.value)
+  if (buffer.length > props.timePoints) buffer.shift()
+  chart?.setOption({
+    series: [{
+      data: buildSeriesData(),
+      showSymbol: true,
+      symbol: 'circle',
+      lineStyle: { width: 2 },
+    }]
+  })
 }
 
 function startTimer() {
@@ -95,7 +105,7 @@ function stopTimer() {
 }
 
 function reset() {
-  initData()
+  buffer = []
   chart?.setOption(buildOption())
 }
 
@@ -136,13 +146,18 @@ watch(() => props.timeStep, () => {
 
 onMounted(() => {
   if (!chartEl.value) return
-  initData()
   chart = echarts.init(chartEl.value)
   chart.setOption(buildOption())
 
   if (props.isRuntime) {
     startTimer()
   }
+
+  // ResizeObserver следит за размером контейнера (меняется при zoom/scale через CSS)
+  resizeObserver = new ResizeObserver(() => {
+    chart?.resize()
+  })
+  resizeObserver.observe(chartEl.value)
 
   window.addEventListener('resize', resize)
 })
@@ -151,6 +166,7 @@ function resize() { chart?.resize() }
 
 onBeforeUnmount(() => {
   stopTimer()
+  resizeObserver?.disconnect()
   window.removeEventListener('resize', resize)
   chart?.dispose()
 })

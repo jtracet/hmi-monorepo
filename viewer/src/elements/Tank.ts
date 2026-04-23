@@ -1,4 +1,3 @@
-// Tank.ts
 import { fabric } from 'fabric'
 import { BaseElement } from './BaseElement'
 
@@ -21,22 +20,16 @@ export class Tank extends BaseElement<TankProps> {
   static elementType = 'tank'
   static category = 'numeric'
   static subcategory = 'indicators'
-  static meta = { inputs: ['value'] as string[], outputs: [] as string[] } as const
+  static meta = { inputs: ['value'] as string[], outputs: [] as string[] }
 
   private container: fabric.Rect
   private fillRect: fabric.Rect
   private valueText: fabric.Text
   private currentValue: number = 0
-
   private _padding = 6
   private readonly H = 150
 
-  constructor(
-    canvas: fabric.Canvas,
-    x: number,
-    y: number,
-    props: Partial<TankProps> = {}
-  ) {
+  constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<TankProps> = {}) {
     const defaults: TankProps = {
       minValue: 0,
       maxValue: 100,
@@ -49,11 +42,10 @@ export class Tank extends BaseElement<TankProps> {
       label: 'Tank',
       labelFontSize: 14,
       fontFamily: 'Arial, sans-serif',
-      fontWeight: 'normal'
+      fontWeight: 'normal',
     }
 
     const p = { ...defaults, ...props }
-
     const W = 80
     const H = 150
     const padding = 6
@@ -69,7 +61,7 @@ export class Tank extends BaseElement<TankProps> {
       originX: 'center',
       originY: 'center',
       left: 0,
-      top: 0
+      top: 0,
     })
 
     const fillRect = new fabric.Rect({
@@ -81,7 +73,7 @@ export class Tank extends BaseElement<TankProps> {
       left: 0,
       top: H / 2 - padding,
       rx: 2,
-      ry: 2
+      ry: 2,
     })
 
     const valueText = new fabric.Text('0', {
@@ -91,8 +83,8 @@ export class Tank extends BaseElement<TankProps> {
       originY: 'center',
       left: 0,
       top: -H / 2 + 15,
-      fontWeight: p.fontWeight ?? 'bold',
-      fontFamily: p.fontFamily ?? 'Arial, sans-serif'
+      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
+      fontWeight: p.fontWeight ?? 'normal',
     })
 
     super(canvas, x, y, [container, fillRect, valueText], p)
@@ -108,7 +100,9 @@ export class Tank extends BaseElement<TankProps> {
       originX: 'center',
       originY: 'top',
       top: H / 2 + 10,
-      left: 0
+      left: 0,
+      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
+      fontWeight: p.fontWeight ?? 'normal',
     })
 
     this.setValue(p.value)
@@ -116,20 +110,13 @@ export class Tank extends BaseElement<TankProps> {
 
   private setValue(value: number) {
     const { minValue, maxValue } = this.customProps
-
     this.currentValue = Math.max(minValue, Math.min(maxValue, value))
-
     const percent = (this.currentValue - minValue) / (maxValue - minValue || 1)
     const fillHeight = (this.H - this._padding * 2) * percent
-
     this.fillRect.set({ height: fillHeight })
-
-    if (this.customProps.showValue) {
-      this.valueText.set({ text: this.currentValue.toFixed(1) })
-    } else {
-      this.valueText.set({ text: '' })
-    }
-
+    this.valueText.set({
+      text: this.customProps.showValue ? this.currentValue.toFixed(1) : '',
+    })
     this.canvas?.requestRenderAll()
   }
 
@@ -138,19 +125,19 @@ export class Tank extends BaseElement<TankProps> {
 
     this.container.set({
       fill: p.emptyColor,
-      stroke: p.borderColor
+      stroke: p.borderColor,
     })
 
     this.fillRect.set({
       fill: p.fillColor,
-      top: this.H / 2 - this._padding
+      top: this.H / 2 - this._padding,
     })
 
     this.valueText.set({
       fontSize: p.valueFontSize,
       top: -this.H / 2 + 15,
       fontFamily: p.fontFamily ?? 'Arial, sans-serif',
-      fontWeight: p.fontWeight ?? 'normal'
+      fontWeight: p.fontWeight ?? 'normal',
     })
 
     this.label.set({
@@ -158,7 +145,7 @@ export class Tank extends BaseElement<TankProps> {
       fontSize: p.labelFontSize,
       top: this.H / 2 + 10,
       fontFamily: p.fontFamily ?? 'Arial, sans-serif',
-      fontWeight: p.fontWeight ?? 'normal'
+      fontWeight: p.fontWeight ?? 'normal',
     })
 
     this.updateIndicatorPosition()

@@ -41,6 +41,7 @@
 
 <script setup lang="ts">
 import { shallowRef, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+
 import { fabric } from 'fabric'
 import { setCanvas } from '@/composables/useCanvas'
 import { useHmiRuntime, type HmiFile } from '@/runtime/useHmiRuntime'
@@ -57,6 +58,7 @@ const wrap = shallowRef<HTMLElement>()
 const cnv = shallowRef<HTMLCanvasElement>()
 const inlineInput = ref<HTMLInputElement>()
 const graphs = ref<any[]>([])
+const graphsVersion = ref(0)
 
 const store = useViewerCanvasStore()
 
@@ -145,6 +147,7 @@ function drawGuides() {
 }
 
 function getGraphStyle(obj: any) {
+  void graphsVersion.value
   return {
     position: 'absolute',
     left: obj.left + 'px',
@@ -155,6 +158,7 @@ function getGraphStyle(obj: any) {
 }
 
 function getGraphValue(g: any) {
+  void graphsVersion.value
   return typeof g.getCurrentValue === 'function' ? g.getCurrentValue() : 0
 }
 
@@ -169,23 +173,32 @@ function calcInlineStyle(element: any): Record<string, string> {
   const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
   const center = element.getCenterPoint()
 
-  const w = (element.width ?? 120) * (element.scaleX ?? 1) * zoom
-  const h = (element.height ?? 40) * (element.scaleY ?? 1) * zoom
+  const inputRect = typeof element.getInputRect === 'function'
+    ? element.getInputRect()
+    : { width: element.width ?? 120, height: element.height ?? 40, offsetX: 0, offsetY: 0 }
+
+  const elW = inputRect.width * (element.scaleX ?? 1) * zoom
+  const elH = inputRect.height * (element.scaleY ?? 1) * zoom
 
   const screenX = center.x * zoom + vpt[4]
   const screenY = center.y * zoom + vpt[5]
 
+  const rectCenterX = screenX + (inputRect.offsetX ?? 0) * (element.scaleX ?? 1) * zoom
+  const rectCenterY = screenY + (inputRect.offsetY ?? 0) * (element.scaleY ?? 1) * zoom
+
   const canvasRect = cnv.value!.getBoundingClientRect()
   const wrapRect = wrap.value!.getBoundingClientRect()
-
   const offsetX = canvasRect.left - wrapRect.left
   const offsetY = canvasRect.top - wrapRect.top
 
   return {
-    left: `${offsetX + screenX - w / 2}px`,
-    top: `${offsetY + screenY - h / 2}px`,
-    width: `${w}px`,
-    height: `${h}px`,
+    left: `${offsetX + rectCenterX - elW / 2}px`,
+    top: `${offsetY + rectCenterY - elH / 2}px`,
+    width: `${elW}px`,
+    height: `${elH}px`,
+    fontSize: `${(element.customProps?.fontSize ?? 24) * zoom * (element.scaleY ?? 1)}px`,
+    fontFamily: element.customProps?.fontFamily ?? 'Arial, sans-serif',
+    fontWeight: element.customProps?.fontWeight ?? 'normal',
   }
 }
 
@@ -269,7 +282,7 @@ onMounted(() => {
 
   canvas.on('object:added', updateGraphs)
   canvas.on('object:removed', updateGraphs)
-  canvas.on('after:render', refreshInlinePosition)
+  canvas.on('after:render', () => { refreshInlinePosition(); graphsVersion.value++ })
   canvas.on('element:edit-number', (e: any) => openInlineEditor(e.target))
 
   resizeObserver = new ResizeObserver(([entry]) => {

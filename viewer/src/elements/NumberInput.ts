@@ -12,7 +12,8 @@ interface NumInputProps {
 
 export class NumberInput extends BaseElement<NumInputProps> {
   static elementType = 'numInput'
-  static category = 'controls'
+  static category = 'numeric'
+  static subcategory = 'controls'
   static meta = { inputs: [] as string[], outputs: ['value'] as string[] }
 
   private txt: fabric.Text
@@ -27,7 +28,7 @@ export class NumberInput extends BaseElement<NumInputProps> {
     const defaults: NumInputProps = {
       value: 0,
       fontSize: 24,
-      label: 'Number Input',
+      label: 'Numeric Input',
       labelFontSize: 14,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal'

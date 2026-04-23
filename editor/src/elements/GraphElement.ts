@@ -10,6 +10,8 @@ export interface GraphProps {
   timePoints: number
   width: number
   height: number
+  fontFamily?: string
+  fontWeight?: string
 }
 
 export class GraphElement extends BaseElement<GraphProps> {
@@ -21,7 +23,7 @@ export class GraphElement extends BaseElement<GraphProps> {
 
   constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<GraphProps> = {}) {
     const defaults: GraphProps = {
-      label: 'Graph',
+      label: 'Time Graph',
       labelFontSize: 14,
       yMax: 100,
       yStep: 20,
@@ -29,6 +31,8 @@ export class GraphElement extends BaseElement<GraphProps> {
       timePoints: 20,
       width: 300,
       height: 200,
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'normal',
     }
     const p = { ...defaults, ...props }
 
@@ -81,6 +85,8 @@ export class GraphElement extends BaseElement<GraphProps> {
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
+      fontFamily: this.customProps.fontFamily ?? 'Arial, sans-serif',
+      fontWeight: this.customProps.fontWeight ?? 'normal',
     })
     this.canvas?.requestRenderAll()
   }

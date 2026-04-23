@@ -6,8 +6,14 @@ import {useSessionStore} from '@/store/session'
 
 export interface HmiFile {
     meta: { version: string; created: string }
-    canvas: any
+    // v2.0 format
+    pages?: Array<{ id: string; name: string; canvasJson: any; view: any }>
+    activePageId?: string
+    // v1.0 legacy format
+    canvas?: any
     bindings?: BindingMap[]
+    view?: any
+    grid?: any
 }
 
 interface BindingMap {
@@ -26,8 +32,17 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
             return
         }
 
-        const rawObjs = hmi.canvas?.objects
-        console.debug('[runtime] hmi.canvas.objects length:', rawObjs?.length)
+        // Поддержка v2.0 (pages) и v1.0 (canvas.objects)
+        let rawObjs: any[]
+        if (hmi.pages && Array.isArray(hmi.pages)) {
+            const activeId = hmi.activePageId
+            const activePage = hmi.pages.find(p => p.id === activeId) ?? hmi.pages[0]
+            rawObjs = activePage?.canvasJson?.objects ?? []
+        } else {
+            rawObjs = hmi.canvas?.objects ?? []
+        }
+
+        console.debug('[runtime] objects to load:', rawObjs?.length)
         canvas.clear()
 
         await new Promise<void>((done) => {
@@ -70,12 +85,19 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
                 el.setCoords()
             } else {
                 const Ctor = ElementRegistry[type as keyof typeof ElementRegistry]
+                if (!Ctor) {
+                    console.warn('[runtime] unknown elementType, skipping:', type)
+                    canvas.remove(obj)
+                    continue
+                }
                 el = new Ctor(canvas, obj.left ?? 0, obj.top ?? 0, props)
                 el.customProps = { ...el.customProps, ...props }
                 el.updateFromProps?.()
 
                 el.id = obj.id || crypto.randomUUID()
-                el.bindings = (obj as any).bindings ?? {inputs: {}, outputs: {}}
+                // bindings are saved as 'bindingsData' by editor's BaseElement.toObject
+                const savedBindings = (obj as any).bindingsData ?? (obj as any).bindings ?? { inputs: {}, outputs: {} }
+                el.bindings = savedBindings
 
                 el.set({
                     scaleX: obj.scaleX,
@@ -87,6 +109,10 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
                     flipY: obj.flipY,
                     originX: obj.originX,
                     originY: obj.originY,
+                    selectable: false,
+                    hasControls: false,
+                    lockMovementX: true,
+                    lockMovementY: true,
                 })
                 el.setCoords()
 
@@ -107,9 +133,26 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
             outputBindings: (o as any).bindings?.outputs || {}
         }))
 
-
         console.debug('[runtime] binding map:', bindingMaps)
         attachStoreWatcher(bindingMaps, map)
+
+        // push initial values of output-bound elements to backend (after a small delay to let tick() run first)
+        setTimeout(() => {
+            const ss = useSessionStore()
+            for (const [, el] of Object.entries(map)) {
+                const outputs = (el as any).bindings?.outputs ?? {}
+                for (const [pinName, path] of Object.entries(outputs) as [string, string][]) {
+                    if (!path) continue
+                    const value = (el as any).customProps?.[pinName]
+                    if (value === undefined) continue
+                    console.debug('[runtime] sending initial value:', path, '=', value)
+                    const payload = buildInputPayload(path, value)
+                    if (Object.keys(payload).length > 0) {
+                        ss.sendInputs(payload).catch(console.error)
+                    }
+                }
+            }
+        }, 100)
     }
 
     function attachStoreWatcher(
@@ -119,11 +162,16 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
         const ss = useSessionStore()
         console.debug('[runtime] ▶ attachStoreWatcher, count=', bindings.length)
 
+        // tick on store change
         watch(
             () => [ss.plc, ss.plant],
             () => { tick() },
             { deep: true, immediate: true }
         )
+
+        // also tick every second to guarantee updates even if store reference doesn't change
+        const interval = setInterval(tick, 1000)
+        canvas.on('canvas:disposed', () => clearInterval(interval))
 
         function tick() {
             for (const b of bindings) {

@@ -29,7 +29,7 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
     const defaults: NumDisplayProps = {
       fontSize: 24,
       precision: 2,
-      label: 'Number Display',
+      label: 'Numeric Indicator',
       labelFontSize: 14,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal'

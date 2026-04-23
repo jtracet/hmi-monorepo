@@ -13,7 +13,8 @@ interface NumControlProps {
 
 export class NumberControl extends BaseElement<NumControlProps> {
   static elementType = 'numControl'
-  static category = 'controls'
+  static category = 'numeric'
+  static subcategory = 'controls'
   static meta = { inputs: [] as string[], outputs: ['value'] as string[] }
 
   private readonly centerW = 80

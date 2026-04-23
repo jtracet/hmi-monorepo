@@ -28,7 +28,7 @@ export class NumberInput extends BaseElement<NumInputProps> {
     const defaults: NumInputProps = {
       value: 0,
       fontSize: 24,
-      label: 'Number Input',
+      label: 'Numeric Input',
       labelFontSize: 14,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal'

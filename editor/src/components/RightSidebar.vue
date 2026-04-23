@@ -283,7 +283,9 @@ const filteredKeys = computed(() =>
     // graph scale props are shown in dedicated section
     !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k)) &&
     // numControl value & step shown in dedicated section
-    !(sel.value?.elementType === 'numControl' && ['value', 'step'].includes(k))
+    !(sel.value?.elementType === 'numControl' && ['value', 'step'].includes(k)) &&
+    // tank width/height are fixed constants, not editable
+    !(sel.value?.elementType === 'tank' && ['width', 'height'].includes(k))
   )
 )
 

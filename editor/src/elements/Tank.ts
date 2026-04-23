@@ -3,8 +3,6 @@ import { fabric } from 'fabric'
 import { BaseElement } from './BaseElement'
 
 interface TankProps {
-  width: number
-  height: number
   minValue: number
   maxValue: number
   value: number
@@ -15,7 +13,6 @@ interface TankProps {
   valueFontSize: number
   label: string
   labelFontSize: number
-  orientation: 'vertical' | 'horizontal'
   fontFamily?: string
   fontWeight?: string
 }
@@ -24,14 +21,15 @@ export class Tank extends BaseElement<TankProps> {
   static elementType = 'tank'
   static category = 'numeric'
   static subcategory = 'indicators'
-  static meta = { inputs: ['value'], outputs: [] } as const
+  static meta = { inputs: ['value'] as string[], outputs: [] as string[] } as const
 
   private container: fabric.Rect
-  private fill: fabric.Rect
+  private fillRect: fabric.Rect
   private valueText: fabric.Text
   private currentValue: number = 0
 
-  private padding = 6
+  private _padding = 6
+  private readonly H = 150
 
   constructor(
     canvas: fabric.Canvas,
@@ -40,8 +38,6 @@ export class Tank extends BaseElement<TankProps> {
     props: Partial<TankProps> = {}
   ) {
     const defaults: TankProps = {
-      width: 80,
-      height: 150,
       minValue: 0,
       maxValue: 100,
       value: 0,
@@ -52,19 +48,19 @@ export class Tank extends BaseElement<TankProps> {
       valueFontSize: 12,
       label: 'Tank',
       labelFontSize: 14,
-      orientation: 'vertical',
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal'
     }
 
     const p = { ...defaults, ...props }
 
-    // 👇 ЛОКАЛЬНАЯ переменная (ключевой фикс)
+    const W = 80
+    const H = 150
     const padding = 6
 
     const container = new fabric.Rect({
-      width: p.width,
-      height: p.height,
+      width: W,
+      height: H,
       fill: p.emptyColor,
       stroke: p.borderColor,
       strokeWidth: 2,
@@ -77,13 +73,13 @@ export class Tank extends BaseElement<TankProps> {
     })
 
     const fillRect = new fabric.Rect({
-      width: p.width - padding * 2,
+      width: W - padding * 2,
       height: 0,
       fill: p.fillColor,
       originX: 'center',
       originY: 'bottom',
       left: 0,
-      top: p.height / 2 - padding,
+      top: H / 2 - padding,
       rx: 2,
       ry: 2
     })
@@ -94,7 +90,7 @@ export class Tank extends BaseElement<TankProps> {
       originX: 'center',
       originY: 'center',
       left: 0,
-      top: -p.height / 2 + 15,
+      top: -H / 2 + 15,
       fontWeight: p.fontWeight ?? 'bold',
       fontFamily: p.fontFamily ?? 'Arial, sans-serif'
     })
@@ -102,16 +98,16 @@ export class Tank extends BaseElement<TankProps> {
     super(canvas, x, y, [container, fillRect, valueText], p)
 
     this.container = container
-    this.fill = fillRect
+    this.fillRect = fillRect
     this.valueText = valueText
-    this.padding = padding
+    this._padding = padding
 
     this.label.set({
       text: p.label,
       fontSize: p.labelFontSize,
       originX: 'center',
       originY: 'top',
-      top: p.height / 2 + 10,
+      top: H / 2 + 10,
       left: 0
     })
 
@@ -119,24 +115,17 @@ export class Tank extends BaseElement<TankProps> {
   }
 
   private setValue(value: number) {
-    const { minValue, maxValue, height } = this.customProps
+    const { minValue, maxValue } = this.customProps
 
     this.currentValue = Math.max(minValue, Math.min(maxValue, value))
 
-    const percent =
-      (this.currentValue - minValue) / (maxValue - minValue || 1)
+    const percent = (this.currentValue - minValue) / (maxValue - minValue || 1)
+    const fillHeight = (this.H - this._padding * 2) * percent
 
-    const maxFillHeight = height - this.padding * 2
-    const fillHeight = maxFillHeight * percent
-
-    this.fill.set({
-      height: fillHeight
-    })
+    this.fillRect.set({ height: fillHeight })
 
     if (this.customProps.showValue) {
-      this.valueText.set({
-        text: this.currentValue.toFixed(1)
-      })
+      this.valueText.set({ text: this.currentValue.toFixed(1) })
     } else {
       this.valueText.set({ text: '' })
     }
@@ -148,21 +137,18 @@ export class Tank extends BaseElement<TankProps> {
     const p = this.customProps
 
     this.container.set({
-      width: p.width,
-      height: p.height,
       fill: p.emptyColor,
       stroke: p.borderColor
     })
 
-    this.fill.set({
-      width: p.width - this.padding * 2,
+    this.fillRect.set({
       fill: p.fillColor,
-      top: p.height / 2 - this.padding
+      top: this.H / 2 - this._padding
     })
 
     this.valueText.set({
       fontSize: p.valueFontSize,
-      top: -p.height / 2 + 15,
+      top: -this.H / 2 + 15,
       fontFamily: p.fontFamily ?? 'Arial, sans-serif',
       fontWeight: p.fontWeight ?? 'normal'
     })
@@ -170,7 +156,7 @@ export class Tank extends BaseElement<TankProps> {
     this.label.set({
       text: p.label,
       fontSize: p.labelFontSize,
-      top: p.height / 2 + 10,
+      top: this.H / 2 + 10,
       fontFamily: p.fontFamily ?? 'Arial, sans-serif',
       fontWeight: p.fontWeight ?? 'normal'
     })

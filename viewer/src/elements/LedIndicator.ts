@@ -21,7 +21,7 @@ export class LedIndicator extends BaseElement<LedProps> {
         const props: LedProps = { 
             onColor: '#65d665', 
             offColor: '#d1d5db',  
-            label: 'Led',
+            label: 'LED Indicator',
             labelFontSize: 14     
         }
 

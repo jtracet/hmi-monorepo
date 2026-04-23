@@ -23,7 +23,7 @@ export class GraphElement extends BaseElement<GraphProps> {
 
   constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<GraphProps> = {}) {
     const defaults: GraphProps = {
-      label: 'Graph',
+      label: 'Time Graph',
       labelFontSize: 14,
       yMax: 100,
       yStep: 20,

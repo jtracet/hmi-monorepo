@@ -12,7 +12,8 @@ interface NumInputProps {
 
 export class NumberInput extends BaseElement<NumInputProps> {
   static elementType = 'numInput'
-  static category = 'controls'
+  static category = 'numeric'
+  static subcategory = 'controls'
   static meta = { inputs: [] as string[], outputs: ['value'] as string[] }
 
   private txt: fabric.Text

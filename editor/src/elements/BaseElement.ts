@@ -18,6 +18,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
     static meta: ElementMeta
 
     customProps!: TProps
+    bindingsData: SavedBindings = { inputs: {}, outputs: {} }
     private _bindings: SavedBindings = { inputs: {}, outputs: {} }
     public id: any
     public label!: fabric.Text  
@@ -130,7 +131,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
             outputs: { ...bindings.outputs }
         }
         
-        this.set('bindingsData', this._bindings)
+        this.bindingsData = this._bindings
         
         this.checkBindings()
         
@@ -189,22 +190,19 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         }
     }
     
-    setDimensions(width: number, height: number): void {
-        super.setDimensions(width, height)
+    setDimensions(_width: number, _height: number): void {
         this.updateIndicatorPosition()
     }
     
     toObject(propertiesToInclude: string[] = []): any {
-        return super.toObject(propertiesToInclude.concat(['bindingsData', 'elementType', 'meta', 'customProps']))
+        return super.toObject([...propertiesToInclude, 'bindingsData', 'elementType', 'meta', 'customProps'])
     }
     
     fromObject(object: any, callback?: Function) {
-        super.fromObject(object, () => {
-            if (object.bindingsData) {
-                this.setBindings(object.bindingsData)
-            }
-            if (callback) callback()
-        })
+        if (object.bindingsData) {
+            this.setBindings(object.bindingsData)
+        }
+        if (callback) callback()
     }
     
     onRender() {

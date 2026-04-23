@@ -150,8 +150,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         }
     }
     
-    setDimensions(width: number, height: number): void {
-        super.setDimensions(width, height)
+    setDimensions(_width: number, _height: number): void {
         this.updateIndicatorPosition()
     }
 }

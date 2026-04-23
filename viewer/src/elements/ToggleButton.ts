@@ -8,7 +8,8 @@ interface ToggleProps {
 
 export class ToggleButton extends BaseElement<ToggleProps> {
     static elementType = 'toggle'
-    static category = 'controls'
+    static category = 'boolean'
+    static subcategory = 'controls'
     static meta = { inputs: [], outputs: ['state'] } as const
 
     private background: fabric.Rect

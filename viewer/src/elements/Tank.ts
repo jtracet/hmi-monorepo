@@ -19,6 +19,7 @@ interface TankProps {
 export class Tank extends BaseElement<TankProps> {
   static elementType = 'tank'
   static category = 'numeric'
+  static subcategory = 'indicators'
   static meta = { inputs: ['value'] as string[], outputs: [] as string[] }
 
   private container: fabric.Rect

@@ -10,7 +10,8 @@ interface LedProps {
 
 export class LedIndicator extends BaseElement<LedProps> {
     static elementType = 'led'
-    static category = 'indicators'
+    static category = 'boolean'
+    static subcategory = 'indicators'
     static meta = { inputs: ['value'], outputs: ['value'] } as const  
 
     private circle: fabric.Circle

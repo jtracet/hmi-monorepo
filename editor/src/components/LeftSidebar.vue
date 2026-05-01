@@ -153,7 +153,6 @@ const categoryDisplayNames: Record<string, string> = {
   'graph': 'graph',
   'decorations': 'decorations',
   'ring': 'ring',
-  'layout': 'layout',
 }
 
 function getElementDisplayName(elementKey: string): string {
@@ -170,7 +169,6 @@ const palette: Record<string, any[]> = {
   graph: [],
   decorations: [],
   ring: [],
-  layout: [],
 }
 
 // 'time-graph' is an alias for loading saved files, not a separate palette item

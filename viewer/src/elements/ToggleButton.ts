@@ -53,6 +53,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.background = background
         this.slider = slider
 
+        this.hoverCursor = 'pointer'
+
         this.label.set({
             text: props.label,
             fontSize: props.labelFontSize  

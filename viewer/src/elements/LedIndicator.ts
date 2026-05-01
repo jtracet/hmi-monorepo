@@ -37,6 +37,8 @@ export class LedIndicator extends BaseElement<LedProps> {
 
         this.circle = circle
 
+        this.hoverCursor = 'pointer'
+
         this.label.set({
             text: props.label,
             fontSize: props.labelFontSize     

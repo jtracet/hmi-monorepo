@@ -78,6 +78,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.txt = text
     this.border = border
 
+    this.hoverCursor = 'pointer'
+
     this.on('mouseup', (e) => {
       e.e.preventDefault()
       e.e.stopPropagation()

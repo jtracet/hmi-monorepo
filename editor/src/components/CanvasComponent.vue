@@ -525,6 +525,12 @@ function handleKey(e: KeyboardEvent) {
   if (!canvas || e.code === 'Space') return
   const mod = e.ctrlKey || e.metaKey
   const shift = e.shiftKey
+
+  // не перехватываем Delete/Escape если фокус в поле ввода
+  const active = document.activeElement as HTMLElement | null
+  const inInput = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
+  if (inInput && e.code === 'Delete') return
+
   if (e.code === 'Delete') { deleteSelection(); e.preventDefault(); return }
   if (e.code === 'Escape') {
     if (isSelecting && selectionRect) cancelSelection()

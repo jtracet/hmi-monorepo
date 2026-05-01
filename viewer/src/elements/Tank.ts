@@ -150,7 +150,7 @@ export class Tank extends BaseElement<TankProps> {
     })
 
     this.updateIndicatorPosition()
-    this.setValue(this.currentValue)
+    this.setValue(Number(p.value) || 0)
   }
 
   setState({ value }: { value?: number }) {

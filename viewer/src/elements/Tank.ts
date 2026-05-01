@@ -109,7 +109,8 @@ export class Tank extends BaseElement<TankProps> {
   }
 
   private setValue(value: number) {
-    const { minValue, maxValue } = this.customProps
+    const minValue = Number(this.customProps.minValue) || 0
+    const maxValue = Number(this.customProps.maxValue) || 100
     this.currentValue = Math.max(minValue, Math.min(maxValue, value))
     const percent = (this.currentValue - minValue) / (maxValue - minValue || 1)
     const fillHeight = (this.H - this._padding * 2) * percent

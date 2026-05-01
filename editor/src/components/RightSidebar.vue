@@ -71,6 +71,13 @@
             @update:value="applyProps"
           />
 
+          <n-input-number
+            v-else-if="propTypes[key] === 'number'"
+            v-model:value="propsProxy[key]"
+            size="small"
+            @update:value="applyProps"
+          />
+
           <n-input
             v-else
             v-model:value="propsProxy[key]"
@@ -257,11 +264,20 @@ function toggleElementState() {
 
 /* propsProxy handling */
 const propsProxy = reactive<Record<string, any>>({})
+const propTypes = reactive<Record<string, string>>({})
 watch(
   sel,
   s => {
     Object.keys(propsProxy).forEach(k => delete propsProxy[k])
-    if (s?.customProps) Object.assign(propsProxy, JSON.parse(JSON.stringify(s.customProps)))
+    Object.keys(propTypes).forEach(k => delete propTypes[k])
+    if (s?.customProps) {
+      const copy = JSON.parse(JSON.stringify(s.customProps))
+      Object.assign(propsProxy, copy)
+      // запоминаем исходные типы полей
+      for (const k of Object.keys(copy)) {
+        propTypes[k] = typeof copy[k]
+      }
+    }
   },
   { immediate: true }
 )

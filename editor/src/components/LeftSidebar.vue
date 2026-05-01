@@ -244,7 +244,6 @@ function doSave() {
   const hmi = {
     meta: {version: '2.0', created: new Date().toISOString()},
     pages: pagesStore.serialize(),
-    activePageId: pagesStore.activePageId,
     grid: {
       showGrid: canvasStore.grid.showGrid,
       snapToGrid: canvasStore.grid.snapToGrid,

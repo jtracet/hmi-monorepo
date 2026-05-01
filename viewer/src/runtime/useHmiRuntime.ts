@@ -35,8 +35,7 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
         // Поддержка v2.0 (pages) и v1.0 (canvas.objects)
         let rawObjs: any[]
         if (hmi.pages && Array.isArray(hmi.pages)) {
-            const activeId = hmi.activePageId
-            const activePage = hmi.pages.find(p => p.id === activeId) ?? hmi.pages[0]
+            const activePage = hmi.pages[0]
             rawObjs = activePage?.canvasJson?.objects ?? []
         } else {
             rawObjs = hmi.canvas?.objects ?? []

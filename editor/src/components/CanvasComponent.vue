@@ -565,6 +565,7 @@ function handleKey(e: KeyboardEvent) {
   const inInput = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.isContentEditable
   if (inInput && e.code === 'Delete') return
   if (inInput && mod && (e.code === 'KeyC' || e.code === 'KeyV' || e.code === 'KeyX')) return
+  if (inInput && mod && (e.code === 'KeyZ' || e.code === 'KeyY')) return
 
   if (e.code === 'Delete') { deleteSelection(); e.preventDefault(); return }
   if (e.code === 'Escape') {

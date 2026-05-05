@@ -260,27 +260,61 @@ function snapshot() {
 function loadState(json: any) {
   setSuppressSnapshots(true)
   canvas.clear()
-  fabric.util.enlivenObjects(json.objects ?? [], (objs: fabric.Object[]) => {
-    objs.forEach(obj => canvas.add(obj))
-    canvas.renderAll()
-    updateSelection()
-    setSuppressSnapshots(false)
-  }, 'fabric')
+  for (const obj of json.objects ?? []) {
+    const type = obj.elementType
+    if (!type) continue
+    if (type === 'image') {
+      fabric.util.enlivenObjects([obj], (objs: fabric.Object[]) => {
+        const img = objs[0]
+        if (!img) return
+        img.set({ selectable: true, evented: true })
+        canvas.add(img)
+        canvas.requestRenderAll()
+      }, 'fabric')
+      continue
+    }
+    const Ctor = ElementRegistry[type as ElementType]
+    if (!Ctor) continue
+    const el = new Ctor(canvas, obj.left ?? 0, obj.top ?? 0, obj.customProps ?? {})
+    el.id = obj.id || crypto.randomUUID()
+    const bindings = obj.bindingsData ?? obj.bindings ?? { inputs: {}, outputs: {} }
+    if (typeof (el as any).setBindings === 'function') (el as any).setBindings(bindings)
+    el.set({
+      scaleX: obj.scaleX ?? 1, scaleY: obj.scaleY ?? 1,
+      angle: obj.angle ?? 0, flipX: obj.flipX ?? false, flipY: obj.flipY ?? false,
+      hasControls: false, lockScalingX: true, lockScalingY: true, lockRotation: true,
+    })
+    el.setCoords()
+    ;(el as any).updateFromProps?.()
+  }
+  canvas.renderAll()
+  updateSelection()
+  setSuppressSnapshots(false)
 }
 
 function copySelection() { clipboard = canvas.getActiveObjects().map(o => o) }
 
 function pasteClipboard() {
   clipboard.forEach(source => {
-    source.clone((clone: fabric.Object | null) => {
-      if (!clone) return
-      ;(clone as any).id = crypto.randomUUID()
-      clone.set({ left: (clone.left ?? 0) + 20, top: (clone.top ?? 0) + 20 })
-      canvas.add(clone)
-      canvas.setActiveObject(clone)
-      canvas.requestRenderAll()
-      snapshot()
-    }, ['id', 'customProps', 'elementType', 'bindings', 'meta'])
+    const obj = source.toJSON(['id', 'customProps', 'elementType', 'bindings', 'bindingsData', 'meta'])
+    const type = obj.elementType
+    if (!type) return
+    const Ctor = ElementRegistry[type as ElementType]
+    if (!Ctor) return
+    const el = new Ctor(canvas, (obj.left ?? 0) + 20, (obj.top ?? 0) + 20, obj.customProps ?? {})
+    el.id = crypto.randomUUID()
+    const bindings = obj.bindingsData ?? obj.bindings ?? { inputs: {}, outputs: {} }
+    if (typeof (el as any).setBindings === 'function') (el as any).setBindings(bindings)
+    el.set({
+      scaleX: obj.scaleX ?? 1, scaleY: obj.scaleY ?? 1,
+      angle: obj.angle ?? 0, flipX: obj.flipX ?? false, flipY: obj.flipY ?? false,
+      hasControls: false, lockScalingX: true, lockScalingY: true, lockRotation: true,
+    })
+    el.setCoords()
+    ;(el as any).updateFromProps?.()
+    canvas.setActiveObject(el)
+    canvas.requestRenderAll()
+    snapshot()
   })
 }
 

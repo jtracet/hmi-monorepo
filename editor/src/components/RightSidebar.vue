@@ -111,9 +111,66 @@
         </div>
       </details>
 
+      <!-- size controls -->
+      <details v-if="sel?.elementType === 'numInput' || sel?.elementType === 'numDisplay'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Размер</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Ширина</label>
+          <n-input-number v-model:value="propsProxy.elementWidth" :min="40" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Высота</label>
+          <n-input-number v-model:value="propsProxy.elementHeight" :min="20" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
+      <details v-if="sel?.elementType === 'numControl'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Размер</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Высота</label>
+          <n-input-number v-model:value="propsProxy.elementHeight" :min="20" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
+      <details v-if="sel?.elementType === 'led'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Размер</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Радиус</label>
+          <n-input-number v-model:value="propsProxy.radius" :min="5" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
+      <details v-if="sel?.elementType === 'toggle'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Размер</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Ширина</label>
+          <n-input-number v-model:value="propsProxy.elementWidth" :min="30" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
+      <details v-if="sel?.elementType === 'tank'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Размер</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Ширина</label>
+          <n-input-number v-model:value="propsProxy.elementWidth" :min="20" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Высота</label>
+          <n-input-number v-model:value="propsProxy.elementHeight" :min="40" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
       <!-- graph scale controls -->
       <details v-if="sel?.elementType === 'time-graph'" open class="mb-4">
         <summary class="cursor-pointer font-medium mb-1">Шкалы графика</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Ширина</label>
+          <n-input-number v-model:value="propsProxy.width" :min="100" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Высота</label>
+          <n-input-number v-model:value="propsProxy.height" :min="60" size="small" @update:value="applyProps" />
+        </div>
         <div class="mb-2">
           <label class="block mb-1">Макс. значение (Y)</label>
           <n-input-number v-model:value="propsProxy.yMax" :min="1" size="small" @update:value="applyProps" />
@@ -296,12 +353,12 @@ const filteredKeys = computed(() =>
     k !== 'labelFontSize' && 
     k !== 'fontFamily' && 
     k !== 'fontWeight' &&
-    // graph scale props are shown in dedicated section
+    k !== 'elementWidth' &&
+    k !== 'elementHeight' &&
+    k !== 'radius' &&
     !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k)) &&
-    // numControl value & step shown in dedicated section
     !(sel.value?.elementType === 'numControl' && ['value', 'step'].includes(k)) &&
-    // tank width/height are fixed constants, not editable
-    !(sel.value?.elementType === 'tank' && ['width', 'height'].includes(k))
+    !(sel.value?.elementType === 'tank' && ['width', 'height', 'value'].includes(k))
   )
 )
 

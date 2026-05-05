@@ -86,24 +86,14 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
 
         this.hoverCursor = 'pointer'
         this.setControlsVisibility({
-            tl: true, tr: true, bl: true, br: true,
+            tl: false, tr: false, bl: false, br: false,
             ml: false, mr: false, mt: false, mb: false,
             mtr: false
         })
         this.lockScalingX = true
         this.lockScalingY = true
         this.lockRotation = true
-        this.set({ hasControls: false, selectable: true })
-
-        this.on('mousedblclick', () => {
-            this.set({
-                hasControls: true,
-                lockScalingX: false,
-                lockScalingY: false,
-                lockRotation: false
-            })
-            this.canvas?.requestRenderAll()
-        })
+        this.set({ hasControls: false, selectable: true } as any)
 
         this.on('deselected', () => {
             this.set({
@@ -111,7 +101,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
                 lockScalingX: true,
                 lockScalingY: true,
                 lockRotation: true
-            })
+            } as any)
             this.canvas?.requestRenderAll()
         })
 

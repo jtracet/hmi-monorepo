@@ -82,12 +82,21 @@ export class GraphElement extends BaseElement<GraphProps> {
   }
 
   updateFromProps() {
+    const w = this.customProps.width ?? 300
+    const h = this.customProps.height ?? 200
+
+    const rect = this.getObjects().find(o => o.type === 'rect') as fabric.Rect | undefined
+    if (rect) rect.set({ width: w, height: h })
+
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
+      top: h / 2 + 20,
       fontFamily: this.customProps.fontFamily ?? 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight ?? 'normal',
     })
+    this.addWithUpdate()
+    this.setCoords()
     this.canvas?.requestRenderAll()
   }
 }

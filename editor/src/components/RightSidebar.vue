@@ -89,6 +89,64 @@
         <n-button size="tiny" type="primary" @click="applyProps">Применить</n-button>
       </details>
 
+      <!-- ringSelector items dictionary -->
+      <details v-if="sel?.elementType === 'ringSelector'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Словарь пунктов</summary>
+        <div class="space-y-1 mb-2">
+          <div
+            v-for="(item, idx) in (propsProxy.items as any[])"
+            :key="idx"
+            class="flex items-center gap-1"
+          >
+            <n-input
+              v-model:value="item.label"
+              size="small"
+              placeholder="Название"
+              class="flex-1"
+              @update:value="applyProps"
+            />
+            <n-input-number
+              v-model:value="item.value"
+              size="small"
+              placeholder="Значение"
+              style="width: 80px"
+              @update:value="applyProps"
+            />
+            <n-button
+              size="tiny"
+              type="error"
+              secondary
+              @click="removeRingItem(idx)"
+            >✕</n-button>
+          </div>
+        </div>
+        <n-button size="tiny" type="primary" secondary @click="addRingItem">+ Добавить пункт</n-button>
+
+        <div class="mt-3 mb-1">
+          <label class="block mb-1">Текущий индекс</label>
+          <n-input-number
+            v-model:value="propsProxy.selectedIndex"
+            :min="0"
+            :max="Math.max(0, (propsProxy.items as any[]).length - 1)"
+            size="small"
+            @update:value="applyProps"
+          />
+        </div>
+      </details>
+
+      <!-- ringSelector size -->
+      <details v-if="sel?.elementType === 'ringSelector'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Размер</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Ширина центральной части</label>
+          <n-input-number v-model:value="propsProxy.elementWidth" :min="60" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Высота</label>
+          <n-input-number v-model:value="propsProxy.elementHeight" :min="20" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
       <!-- toggle control -->
       <details v-if="sel?.elementType === 'toggle'" open class="mb-4">
         <summary class="cursor-pointer font-medium mb-1">Управление переключателем</summary>
@@ -346,6 +404,24 @@ function applyProps() {
   sel.value.canvas?.requestRenderAll()
 }
 
+function addRingItem() {
+  if (!propsProxy.items) propsProxy.items = []
+  const items = propsProxy.items as any[]
+  items.push({ label: `Option ${items.length}`, value: items.length })
+  applyProps()
+}
+
+function removeRingItem(idx: number) {
+  const items = propsProxy.items as any[]
+  if (!items || items.length <= 1) return
+  items.splice(idx, 1)
+  // clamp selectedIndex
+  if (propsProxy.selectedIndex >= items.length) {
+    propsProxy.selectedIndex = items.length - 1
+  }
+  applyProps()
+}
+
 /* filtered keys to avoid duplicate label controls */
 const filteredKeys = computed(() => 
   Object.keys(propsProxy).filter(k => 
@@ -358,7 +434,8 @@ const filteredKeys = computed(() =>
     k !== 'radius' &&
     !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k)) &&
     !(sel.value?.elementType === 'numControl' && ['value', 'step'].includes(k)) &&
-    !(sel.value?.elementType === 'tank' && ['width', 'height', 'value'].includes(k))
+    !(sel.value?.elementType === 'tank' && ['width', 'height', 'value'].includes(k)) &&
+    !(sel.value?.elementType === 'ringSelector' && ['items', 'selectedIndex'].includes(k))
   )
 )
 

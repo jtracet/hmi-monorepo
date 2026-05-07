@@ -60,8 +60,8 @@ export class NumberControl extends BaseElement<NumControlProps> {
       left: -(centerW / 2 + btnW / 2), top: 0
     })
 
-    const arrowLeft = new fabric.Text('◀', {
-      fontSize: 12, fill: '#374151',
+    const arrowLeft = new fabric.Text('-', {
+      fontSize: 20, fill: '#374151',
       originX: 'center', originY: 'center',
       left: -(centerW / 2 + btnW / 2), top: 0,
       selectable: false, evented: false
@@ -91,8 +91,8 @@ export class NumberControl extends BaseElement<NumControlProps> {
       left: centerW / 2 + btnW / 2, top: 0
     })
 
-    const arrowRight = new fabric.Text('▶', {
-      fontSize: 12, fill: '#374151',
+    const arrowRight = new fabric.Text('+', {
+      fontSize: 20, fill: '#374151',
       originX: 'center', originY: 'center',
       left: centerW / 2 + btnW / 2, top: 0,
       selectable: false, evented: false

@@ -145,6 +145,7 @@ const elementDisplayNames: Record<string, string> = {
   'numDisplay': 'Numeric Indicator',
   'graph': 'Time Graph',
   'tank': 'Tank',
+  'ringSelector': 'Ring Selector',
 }
 
 const categoryDisplayNames: Record<string, string> = {

@@ -82,7 +82,7 @@ export class LineElement extends BaseElement<LineProps> {
     updateFromProps() {
         this.line.set({
             stroke: this.customProps.stroke,
-            strokeWidth: this.customProps.strokeWidth
+            strokeWidth: Number(this.customProps.strokeWidth) || 1
         })
         this.canvas?.requestRenderAll()
     }

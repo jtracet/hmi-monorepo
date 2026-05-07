@@ -145,6 +145,7 @@ const elementDisplayNames: Record<string, string> = {
   'numDisplay': 'Numeric Indicator',
   'graph': 'Time Graph',
   'tank': 'Tank',
+  'ringSelector': 'Ring Selector',
 }
 
 const categoryDisplayNames: Record<string, string> = {
@@ -153,7 +154,6 @@ const categoryDisplayNames: Record<string, string> = {
   'graph': 'graph',
   'decorations': 'decorations',
   'ring': 'ring',
-  'layout': 'layout',
 }
 
 function getElementDisplayName(elementKey: string): string {
@@ -170,7 +170,6 @@ const palette: Record<string, any[]> = {
   graph: [],
   decorations: [],
   ring: [],
-  layout: [],
 }
 
 // 'time-graph' is an alias for loading saved files, not a separate palette item
@@ -246,7 +245,6 @@ function doSave() {
   const hmi = {
     meta: {version: '2.0', created: new Date().toISOString()},
     pages: pagesStore.serialize(),
-    activePageId: pagesStore.activePageId,
     grid: {
       showGrid: canvasStore.grid.showGrid,
       snapToGrid: canvasStore.grid.snapToGrid,

@@ -35,8 +35,7 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
         // Поддержка v2.0 (pages) и v1.0 (canvas.objects)
         let rawObjs: any[]
         if (hmi.pages && Array.isArray(hmi.pages)) {
-            const activeId = hmi.activePageId
-            const activePage = hmi.pages.find(p => p.id === activeId) ?? hmi.pages[0]
+            const activePage = hmi.pages[0]
             rawObjs = activePage?.canvasJson?.objects ?? []
         } else {
             rawObjs = hmi.canvas?.objects ?? []
@@ -45,85 +44,88 @@ export function useHmiRuntime(canvas: fabric.Canvas) {
         console.debug('[runtime] objects to load:', rawObjs?.length)
         canvas.clear()
 
-        await new Promise<void>((done) => {
-            fabric.util.enlivenObjects(rawObjs ?? [], (loaded) => {
-                console.debug('[runtime] ✨ enlivened objects count:', loaded.length)
-                loaded.forEach((o) => canvas.add(o))
-                done()
-            })
-        })
-
         const map: Record<string, any> = {}
-        const objectsCopy = [...canvas.getObjects()]
-        console.debug('[runtime] canvas.getObjects count:', objectsCopy.length)
 
-        for (const obj of objectsCopy) {
-            const type = (obj as any).elementType
-            if (!type) {
-                obj.set({
-                    selectable: false,
-                    evented: false,
-                    hasControls: false,
-                    lockMovementX: true,
-                    lockMovementY: true,
+        for (const obj of rawObjs ?? []) {
+            const type = obj.elementType
+
+            // --- IMAGE (через enliven) ---
+            if (type === 'image') {
+                await new Promise<void>((resolve) => {
+                    fabric.util.enlivenObjects([obj], (objs: fabric.Object[]) => {
+                        const img = objs[0]
+                        if (!img) return resolve()
+
+                        img.set({
+                            selectable: false,
+                            evented: false,
+                            hasControls: false,
+                            lockMovementX: true,
+                            lockMovementY: true,
+                        })
+
+                        img.id = obj.id || crypto.randomUUID()
+                        map[img.id] = img
+
+                        canvas.add(img)
+                        resolve()
+                    })
                 })
-                obj.setCoords()
                 continue
             }
 
-            const props = (obj as any).customProps ?? {}
-            let el: fabric.Object
-            if (type === 'image') {
-                el = obj
-                el.set({
+            // --- UNKNOWN / DECORATION ---
+            if (!type) {
+                const rect = new fabric.Rect(obj)
+                rect.set({
                     selectable: false,
                     evented: false,
-                    hasControls: false,
-                    lockMovementX: true,
-                    lockMovementY: true,
                 })
-                el.setCoords()
-            } else {
-                const Ctor = ElementRegistry[type as keyof typeof ElementRegistry]
-                if (!Ctor) {
-                    console.warn('[runtime] unknown elementType, skipping:', type)
-                    canvas.remove(obj)
-                    continue
-                }
-                el = new Ctor(canvas, obj.left ?? 0, obj.top ?? 0, props)
-                el.customProps = { ...el.customProps, ...props }
-                el.updateFromProps?.()
-
-                el.id = obj.id || crypto.randomUUID()
-                // bindings are saved as 'bindingsData' by editor's BaseElement.toObject
-                const savedBindings = (obj as any).bindingsData ?? (obj as any).bindings ?? { inputs: {}, outputs: {} }
-                el.bindings = savedBindings
-
-                el.set({
-                    scaleX: obj.scaleX,
-                    scaleY: obj.scaleY,
-                    skewX: obj.skewX,
-                    skewY: obj.skewY,
-                    angle: obj.angle,
-                    flipX: obj.flipX,
-                    flipY: obj.flipY,
-                    originX: obj.originX,
-                    originY: obj.originY,
-                    selectable: false,
-                    hasControls: false,
-                    lockMovementX: true,
-                    lockMovementY: true,
-                })
-                el.setCoords()
-
-                canvas.remove(obj)
+                canvas.add(rect)
+                continue
             }
 
-            map[el.id!] = el
+            // --- CUSTOM ELEMENT ---
+            const Ctor = ElementRegistry[type as keyof typeof ElementRegistry]
+            if (!Ctor) {
+                console.warn('[runtime] unknown elementType, skipping:', type)
+                continue
+            }
+
+            const props = obj.customProps ?? {}
+            const el = new Ctor(canvas, obj.left ?? 0, obj.top ?? 0, props)
+
+            el.id = obj.id || crypto.randomUUID()
+
+            const bindings =
+                obj.bindingsData ??
+                obj.bindings ??
+                { inputs: {}, outputs: {} }
+
+            el.bindings = bindings
+
+            el.set({
+                scaleX: obj.scaleX ?? 1,
+                scaleY: obj.scaleY ?? 1,
+                angle: obj.angle ?? 0,
+                flipX: obj.flipX ?? false,
+                flipY: obj.flipY ?? false,
+                selectable: false,
+                hasControls: false,
+                lockMovementX: true,
+                lockMovementY: true,
+            })
+
+            el.setCoords()
+            el.updateFromProps?.()
+
+            map[el.id] = el
+        
         }
 
 
         runtimeElems.value = map
+        canvas.getObjects().forEach(o => o.setCoords())
         canvas.requestRenderAll()
         console.debug('[runtime] ✅ runtimeElems keys:', Object.keys(map))
 

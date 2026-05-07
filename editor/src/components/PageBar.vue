@@ -23,12 +23,21 @@
       </template>
       <template v-else>
         <span>{{ page.name }}</span>
-        <button
+        <n-popconfirm
           v-if="pages.length > 1"
-          class="ml-1 text-gray-400 hover:text-red-500 leading-none"
-          @click.stop="removePage(page.id)"
-          title="Удалить страницу"
-        >×</button>
+          @positive-click="removePage(page.id)"
+          positive-text="Удалить"
+          negative-text="Отмена"
+        >
+          <template #trigger>
+            <button
+              class="ml-1 text-gray-400 hover:text-red-500 leading-none"
+              @click.stop
+              title="Удалить страницу"
+            >×</button>
+          </template>
+          Удалить страницу «{{ page.name }}»?
+        </n-popconfirm>
       </template>
     </div>
 
@@ -42,6 +51,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick, computed } from 'vue'
+import { NPopconfirm } from 'naive-ui'
 import { usePagesStore } from '../store/pages'
 
 const emit = defineEmits<{

@@ -6,13 +6,13 @@ interface ToggleProps {
     labelFontSize: number
     fontFamily?: string
     fontWeight?: string
+    elementWidth: number
 }
 
 export class ToggleButton extends BaseElement<ToggleProps> {
     static elementType = 'toggle'
     static category = 'boolean'
     static subcategory = 'controls'
-
     static meta = { inputs: [], outputs: ['state'] } as const
 
     private background: fabric.Rect
@@ -21,36 +21,33 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     private lastClickTime = 0
 
     constructor(canvas: fabric.Canvas, x: number, y: number) {
-        const props: ToggleProps = { 
+        const props: ToggleProps = {
             label: 'Slide Switch',
             labelFontSize: 14,
             fontFamily: 'Arial, sans-serif',
-            fontWeight: 'normal'
+            fontWeight: 'normal',
+            elementWidth: 60,
         }
 
+        const bgW = props.elementWidth
+        const bgH = Math.round(bgW * 0.5)
+        const slSize = Math.round(bgH * 0.87)
+
         const background = new fabric.Rect({
-            width: 60,
-            height: 30,
-            rx: 15,
-            ry: 15,
+            width: bgW, height: bgH,
+            rx: bgH / 2, ry: bgH / 2,
             fill: '#d1d5db',
-            originX: 'center',
-            originY: 'center',
-            selectable: false,
-            evented: true 
+            originX: 'center', originY: 'center',
+            selectable: false, evented: true
         })
 
         const slider = new fabric.Rect({
-            width: 26,
-            height: 26,
-            rx: 13,
-            ry: 13,
+            width: slSize, height: slSize,
+            rx: slSize / 2, ry: slSize / 2,
             fill: '#fff',
-            left: -15,
-            originX: 'center',
-            originY: 'center',
-            selectable: false,
-            evented: true   
+            left: -Math.round(bgW * 0.2),
+            originX: 'center', originY: 'center',
+            selectable: false, evented: true
         })
 
         super(canvas, x, y, [background, slider], props)
@@ -73,25 +70,20 @@ export class ToggleButton extends BaseElement<ToggleProps> {
 
         this.on('mouseup', (e) => {
             if (!this.isRuntime) return
-            
             e.e.preventDefault()
             e.e.stopPropagation()
-            
             const now = Date.now()
-            if (now - this.lastClickTime < 250) {
-                return
-            }
+            if (now - this.lastClickTime < 250) return
             this.lastClickTime = now
             this.toggleState()
         })
-
 
         this.updateVisuals()
     }
 
     public toggleState() {
         this._state = !this._state
-        this.updateVisuals()
+        this.animateSlider()
         this.emitState()
     }
 
@@ -99,20 +91,38 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         return this._state
     }
 
+    // lightweight: only color + slider animation, no addWithUpdate
+    private animateSlider() {
+        const bgW = this.customProps.elementWidth ?? 60
+        const bgH = Math.round(bgW * 0.5)
+        const travel = Math.round(bgW * 0.2)
+        const targetX = this._state ? travel : -travel
+        const bgColor = this._state ? '#3b82f6' : '#d1d5db'
+        this.background.set({ fill: bgColor, dirty: true })
+        this.slider.animate('left', targetX, {
+            duration: 150,
+            onChange: () => this.canvas?.requestRenderAll(),
+        })
+        this.canvas?.requestRenderAll()
+    }
+
+    // full update: sizes + layout, called from RightSidebar
     private updateVisuals() {
-        const targetX = this._state ? 12 : -12
+        const bgW = this.customProps.elementWidth ?? 60
+        const bgH = Math.round(bgW * 0.5)
+        const slSize = Math.round(bgH * 0.87)
+        const travel = Math.round(bgW * 0.2)
+        const targetX = this._state ? travel : -travel
         const bgColor = this._state ? '#3b82f6' : '#d1d5db'
 
+        this.background.set({ width: bgW, height: bgH, rx: bgH / 2, ry: bgH / 2, fill: bgColor, dirty: true })
+        this.slider.set({ width: slSize, height: slSize, rx: slSize / 2, ry: slSize / 2 })
         this.label.set({
             text: this.customProps.label,
             fontSize: this.customProps.labelFontSize,
+            top: bgH / 2.2,
             fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
             fontWeight: this.customProps.fontWeight || 'normal'
-        })
-
-        this.background.set({
-            fill: bgColor,
-            dirty: true
         })
 
         this.slider.animate('left', targetX, {
@@ -120,14 +130,14 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             onChange: () => this.canvas?.requestRenderAll(),
         })
 
+        this.addWithUpdate()
+        this.setCoords()
         this.canvas?.requestRenderAll()
     }
 
     private emitState() {
         this.canvas?.fire('element:output', {
-            target: this,
-            name: 'state',
-            value: this._state
+            target: this, name: 'state', value: this._state
         })
     }
 

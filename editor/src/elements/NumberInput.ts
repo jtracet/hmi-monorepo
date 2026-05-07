@@ -8,6 +8,8 @@ interface NumInputProps {
   labelFontSize: number
   fontFamily?: string
   fontWeight?: string
+  elementWidth: number
+  elementHeight: number
 }
 
 export class NumberInput extends BaseElement<NumInputProps> {
@@ -31,12 +33,14 @@ export class NumberInput extends BaseElement<NumInputProps> {
       label: 'Numeric Input',
       labelFontSize: 14,
       fontFamily: 'Arial, sans-serif',
-      fontWeight: 'normal'
+      fontWeight: 'normal',
+      elementWidth: 120,
+      elementHeight: 40,
     }
     const p = { ...defaults, ...props }
 
-    const width = 120
-    const height = 40
+    const width = p.elementWidth
+    const height = p.elementHeight
 
     const border = new fabric.Rect({
       width,
@@ -106,7 +110,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
     const n = Number(raw)
     if (!Number.isFinite(n)) return
     this.customProps.value = n
-    this.updateFromProps()
+    this.txt.set({ text: String(n) })
+    this.canvas?.requestRenderAll()
     this.emitState()
   }
 
@@ -118,20 +123,24 @@ export class NumberInput extends BaseElement<NumInputProps> {
   }
 
   updateFromProps() {
+    const w = this.customProps.elementWidth ?? 120
+    const h = this.customProps.elementHeight ?? 40
+    this.border.set({ width: w, height: h })
     this.txt.set({
       text: String(this.customProps.value),
       fontSize: this.customProps.fontSize,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
-
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
+      top: h / 2.2,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
-
+    this.addWithUpdate()
+    this.setCoords()
     this.canvas?.requestRenderAll()
   }
 

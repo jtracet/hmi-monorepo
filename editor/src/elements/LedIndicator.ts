@@ -55,9 +55,9 @@ export class LedIndicator extends BaseElement<LedProps> {
             if (!this.isRuntime) return
             e.e.preventDefault()
             e.e.stopPropagation()
-            this._state = !this._state
-            this.updateFromProps()
-            this.emitState()
+        this._state = !this._state
+        this.updateVisuals()
+        this.emitState()
         })
     }
 
@@ -65,7 +65,7 @@ export class LedIndicator extends BaseElement<LedProps> {
         const { onColor, offColor, label, labelFontSize, fontFamily, fontWeight } = this.customProps
         const r = this.customProps.radius ?? 15
 
-        this.circle.set({ fill: this._state ? onColor : offColor, radius: r })
+        this.circle.set({ radius: r })
         this.label.set({
             text: label,
             fontSize: labelFontSize,
@@ -75,12 +75,20 @@ export class LedIndicator extends BaseElement<LedProps> {
         })
         this.addWithUpdate()
         this.setCoords()
+        // update color after addWithUpdate to avoid label drift
+        this.circle.set({ fill: this._state ? onColor : offColor })
+        this.canvas?.requestRenderAll()
+    }
+
+    private updateVisuals() {
+        const { onColor, offColor } = this.customProps
+        this.circle.set({ fill: this._state ? onColor : offColor })
         this.canvas?.requestRenderAll()
     }
 
     setState({ value }: { value?: boolean }) {
         this._state = !!value
-        this.updateFromProps()
+        this.updateVisuals()
     }
 
     private emitState() {

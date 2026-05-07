@@ -83,7 +83,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
 
     public toggleState() {
         this._state = !this._state
-        this.updateVisuals()
+        this.animateSlider()
         this.emitState()
     }
 
@@ -91,6 +91,22 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         return this._state
     }
 
+    // lightweight: only color + slider animation, no addWithUpdate
+    private animateSlider() {
+        const bgW = this.customProps.elementWidth ?? 60
+        const bgH = Math.round(bgW * 0.5)
+        const travel = Math.round(bgW * 0.2)
+        const targetX = this._state ? travel : -travel
+        const bgColor = this._state ? '#3b82f6' : '#d1d5db'
+        this.background.set({ fill: bgColor, dirty: true })
+        this.slider.animate('left', targetX, {
+            duration: 150,
+            onChange: () => this.canvas?.requestRenderAll(),
+        })
+        this.canvas?.requestRenderAll()
+    }
+
+    // full update: sizes + layout, called from RightSidebar
     private updateVisuals() {
         const bgW = this.customProps.elementWidth ?? 60
         const bgH = Math.round(bgW * 0.5)

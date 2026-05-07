@@ -110,7 +110,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
     const n = Number(raw)
     if (!Number.isFinite(n)) return
     this.customProps.value = n
-    this.updateFromProps()
+    this.txt.set({ text: String(n) })
+    this.canvas?.requestRenderAll()
     this.emitState()
   }
 

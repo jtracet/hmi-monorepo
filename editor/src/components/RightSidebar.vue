@@ -380,19 +380,23 @@ function toggleElementState() {
 /* propsProxy handling */
 const propsProxy = reactive<Record<string, any>>({})
 const propTypes = reactive<Record<string, string>>({})
+let isLoadingProps = false
+
 watch(
   sel,
   s => {
+    isLoadingProps = true
     Object.keys(propsProxy).forEach(k => delete propsProxy[k])
     Object.keys(propTypes).forEach(k => delete propTypes[k])
     if (s?.customProps) {
       const copy = JSON.parse(JSON.stringify(s.customProps))
       Object.assign(propsProxy, copy)
-      // запоминаем исходные типы полей
       for (const k of Object.keys(copy)) {
         propTypes[k] = typeof copy[k]
       }
     }
+    // use nextTick-equivalent: release the lock after Vue has flushed the reactive updates
+    Promise.resolve().then(() => { isLoadingProps = false })
   },
   { immediate: true }
 )
@@ -490,6 +494,7 @@ watch(bindings, () => {
 }, { deep: true })
 
 watch(propsProxy, () => {
+  if (isLoadingProps) return
   if (sel.value && typeof (sel.value as any).updateFromProps === 'function') {
     sel.value.customProps = { ...propsProxy }
     ;(sel.value as any).updateFromProps()

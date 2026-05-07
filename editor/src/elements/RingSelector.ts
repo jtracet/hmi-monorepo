@@ -185,7 +185,7 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     let idx = this.customProps.selectedIndex + delta
     idx = ((idx % items.length) + items.length) % items.length
     this.customProps.selectedIndex = idx
-    this.updateFromProps()
+    this.updateValue()
     this.emitState()
   }
 
@@ -197,19 +197,32 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
           0,
           Math.min(Math.round(idx), this.customProps.items.length - 1)
         )
-        this.updateFromProps()
+        this.updateValue()
       }
     }
   }
 
-  // ── sync visuals ──────────────────────────────────────────────────────────
+  // ── lightweight update: only text, no addWithUpdate ───────────────────────
+  private updateValue() {
+    const p = this.customProps
+    const items = p.items ?? []
+    const idx = Math.max(0, Math.min(p.selectedIndex, items.length - 1))
+    const displayText = items[idx] ? String(items[idx].value) : '—'
+    this.txt.set({
+      text: displayText,
+      fill: p.textColor,
+      fontFamily: p.fontFamily || 'Arial, sans-serif',
+      fontWeight: p.fontWeight || 'normal',
+    })
+    this.canvas?.requestRenderAll()
+  }
+
+  // ── full update: sizes + layout, called from RightSidebar ─────────────────
   updateFromProps() {
     const p   = this.customProps
     const items = p.items ?? []
     const idx = Math.max(0, Math.min(p.selectedIndex, items.length - 1))
     p.selectedIndex = idx
-
-    const displayText = items[idx] ? String(items[idx].value) : '—'
 
     const cw  = p.elementWidth
     const h   = p.elementHeight
@@ -220,15 +233,6 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     this.btnRight.set({ height: h, left:   cw / 2 + bw / 2  })
     this.arrowLeft.set({  left: -(cw / 2 + bw / 2) })
     this.arrowRight.set({ left:   cw / 2 + bw / 2  })
-
-    this.txt.set({
-      text: displayText,
-      fontSize: p.fontSize,
-      fill: p.textColor,
-      fontFamily: p.fontFamily || 'Arial, sans-serif',
-      fontWeight: p.fontWeight || 'normal',
-    })
-
     this.label.set({
       text: p.label,
       fontSize: p.labelFontSize,
@@ -236,10 +240,11 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
       fontFamily: p.fontFamily || 'Arial, sans-serif',
       fontWeight: p.fontWeight || 'normal',
     })
-
     this.addWithUpdate()
     this.setCoords()
-    this.canvas?.requestRenderAll()
+
+    // update text after addWithUpdate to avoid label drift
+    this.updateValue()
   }
 
   private emitState() {

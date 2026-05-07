@@ -129,11 +129,11 @@ export class NumberControl extends BaseElement<NumControlProps> {
 
       if (localX < -halfCenter) {
         this.customProps.value -= this.customProps.step
-        this.updateFromProps()
+        this.updateValue()
         this.emitState()
       } else if (localX > halfCenter) {
         this.customProps.value += this.customProps.step
-        this.updateFromProps()
+        this.updateValue()
         this.emitState()
       } else {
         this.canvas?.fire('element:edit-number', { target: this })
@@ -176,7 +176,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
     const n = Number(raw)
     if (!Number.isFinite(n)) return
     this.customProps.value = n
-    this.updateFromProps()
+    this.updateValue()
     this.emitState()
   }
 
@@ -196,13 +196,6 @@ export class NumberControl extends BaseElement<NumControlProps> {
     this.btnRight.set({ height: h, left: cw / 2 + bw / 2 })
     this.arrowLeft.set({ left: -(cw / 2 + bw / 2) })
     this.arrowRight.set({ left: cw / 2 + bw / 2 })
-
-    this.txt.set({
-      text: String(this.customProps.value),
-      fontSize: this.customProps.fontSize,
-      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
-      fontWeight: this.customProps.fontWeight || 'normal'
-    })
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
@@ -212,6 +205,24 @@ export class NumberControl extends BaseElement<NumControlProps> {
     })
     this.addWithUpdate()
     this.setCoords()
+
+    // update value text without triggering another addWithUpdate
+    this.txt.set({
+      text: String(this.customProps.value),
+      fontSize: this.customProps.fontSize,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
+      fontWeight: this.customProps.fontWeight || 'normal'
+    })
+    this.canvas?.requestRenderAll()
+  }
+
+  private updateValue() {
+    this.txt.set({
+      text: String(this.customProps.value),
+      fontSize: this.customProps.fontSize,
+      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
+      fontWeight: this.customProps.fontWeight || 'normal'
+    })
     this.canvas?.requestRenderAll()
   }
 

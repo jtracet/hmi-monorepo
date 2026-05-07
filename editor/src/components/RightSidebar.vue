@@ -147,6 +147,45 @@
         </div>
       </details>
 
+      <!-- decorationText controls -->
+      <details v-if="sel?.elementType === 'decorationText'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Текст</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Содержимое</label>
+          <n-input
+            v-model:value="propsProxy.text"
+            type="textarea"
+            :autosize="{ minRows: 2, maxRows: 5 }"
+            size="small"
+            @update:value="applyProps"
+          />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Размер шрифта</label>
+          <n-input-number v-model:value="propsProxy.fontSize" :min="6" :max="96" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
+      <details v-if="sel?.elementType === 'decorationText'" open class="mb-4">
+        <summary class="cursor-pointer font-medium mb-1">Размер</summary>
+        <div class="mb-2">
+          <label class="block mb-1">Ширина</label>
+          <n-input-number v-model:value="propsProxy.elementWidth" :min="20" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Высота</label>
+          <n-input-number v-model:value="propsProxy.elementHeight" :min="10" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Скругление углов</label>
+          <n-input-number v-model:value="propsProxy.borderRadius" :min="0" :max="100" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
+          <label class="block mb-1">Толщина рамки</label>
+          <n-input-number v-model:value="propsProxy.borderWidth" :min="0" :max="20" size="small" @update:value="applyProps" />
+        </div>
+      </details>
+
       <!-- toggle control -->
       <details v-if="sel?.elementType === 'toggle'" open class="mb-4">
         <summary class="cursor-pointer font-medium mb-1">Управление переключателем</summary>
@@ -439,7 +478,8 @@ const filteredKeys = computed(() =>
     !(sel.value?.elementType === 'time-graph' && ['yMax', 'yStep', 'timeStep', 'timePoints', 'width', 'height'].includes(k)) &&
     !(sel.value?.elementType === 'numControl' && ['value', 'step'].includes(k)) &&
     !(sel.value?.elementType === 'tank' && ['width', 'height', 'value'].includes(k)) &&
-    !(sel.value?.elementType === 'ringSelector' && ['items', 'selectedIndex'].includes(k))
+    !(sel.value?.elementType === 'ringSelector' && ['items', 'selectedIndex'].includes(k)) &&
+    !(sel.value?.elementType === 'decorationText' && ['text', 'fontSize', 'textAlign', 'borderRadius', 'borderWidth'].includes(k))
   )
 )
 

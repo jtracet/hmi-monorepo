@@ -166,18 +166,16 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
     protected updateIndicatorPosition() {
         if (!this.bindIndicator || !this.showBindIndicator) return
         
-        const mainChild = this.getObjects().find(obj => obj !== this.label && obj !== this.bindIndicator)
+        // Use the group's own bounding box so the indicator always sits
+        // at the top-right corner regardless of child order.
+        const w = this.getScaledWidth  ? this.getScaledWidth()  : (this.width  || 60)
+        const h = this.getScaledHeight ? this.getScaledHeight() : (this.height || 30)
         
-        if (mainChild) {
-            const width = mainChild.getScaledWidth ? mainChild.getScaledWidth() : (mainChild.width || 60)
-            const height = mainChild.getScaledHeight ? mainChild.getScaledHeight() : (mainChild.height || 30)
-            
-            this.bindIndicator.set({
-                left: width / 2,
-                top: -height / 2
-            })
-            this.bindIndicator.setCoords()
-        }
+        this.bindIndicator.set({
+            left:  w / 2,
+            top:  -h / 2
+        })
+        this.bindIndicator.setCoords()
     }
     
     setDimensions(_width: number, _height: number): void {

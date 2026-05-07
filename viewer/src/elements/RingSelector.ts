@@ -24,7 +24,7 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
   static elementType = 'ringSelector'
   static category = 'ring'
   static subcategory = 'controls'
-  static meta = { inputs: ['index'], outputs: ['value', 'index'] }
+  static meta = { inputs: ['index'], outputs: ['value'] }
 
   private readonly btnW = 18
 
@@ -240,6 +240,5 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
   private emitState() {
     const item = this.customProps.items[this.customProps.selectedIndex]
     this.canvas?.fire('element:output', { target: this, name: 'value', value: item?.value ?? 0 })
-    this.canvas?.fire('element:output', { target: this, name: 'index', value: this.customProps.selectedIndex })
   }
 }

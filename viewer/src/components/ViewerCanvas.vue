@@ -23,6 +23,24 @@
       @blur="commitInline"
     />
 
+    <!-- Ring Selector dropdown overlay -->
+    <div
+      v-if="ringDropdown.visible"
+      :style="ringDropdown.style"
+      class="absolute z-50 bg-white border border-gray-300 rounded shadow-lg overflow-y-auto"
+      style="max-height: 200px; min-width: 120px;"
+    >
+      <div
+        v-for="(item, idx) in ringDropdown.items"
+        :key="idx"
+        class="px-3 py-1.5 cursor-pointer hover:bg-blue-50 text-sm"
+        :class="{ 'bg-blue-100 font-medium': idx === ringDropdown.selectedIndex }"
+        @mousedown.prevent="selectRingItem(idx)"
+      >
+        {{ item.label }}
+      </div>
+    </div>
+
     <div class="absolute inset-0 pointer-events-none">
       <GraphTimeSeries
         v-for="g in graphs"
@@ -231,6 +249,63 @@ function cancelInline() {
   inlineEditor.value.visible = false
 }
 
+// ========== RING DROPDOWN ==========
+const ringDropdown = ref({
+  visible: false,
+  items: [] as { label: string; value: number }[],
+  selectedIndex: 0,
+  style: {} as Record<string, string>,
+  target: null as any,
+})
+
+function calcDropdownStyle(element: any): Record<string, string> {
+  const zoom = canvas.getZoom()
+  const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
+  const center = element.getCenterPoint()
+  const rect = typeof element.getDropdownRect === 'function'
+    ? element.getDropdownRect()
+    : { width: element.width ?? 140, height: element.height ?? 36, offsetX: 0, offsetY: 0 }
+  const elW = rect.width * (element.scaleX ?? 1) * zoom
+  const elH = rect.height * (element.scaleY ?? 1) * zoom
+  const screenX = center.x * zoom + vpt[4]
+  const screenY = center.y * zoom + vpt[5]
+  const canvasRect = cnv.value!.getBoundingClientRect()
+  const wrapRect = wrap.value!.getBoundingClientRect()
+  const offsetX = canvasRect.left - wrapRect.left
+  const offsetY = canvasRect.top - wrapRect.top
+  return {
+    left:     `${offsetX + screenX - elW / 2}px`,
+    top:      `${offsetY + screenY + elH / 2 + 2}px`,
+    minWidth: `${elW}px`,
+  }
+}
+
+function openRingDropdown(element: any) {
+  ringDropdown.value = {
+    visible: true,
+    items: element.customProps?.items ?? [],
+    selectedIndex: element.customProps?.selectedIndex ?? 0,
+    style: calcDropdownStyle(element),
+    target: element,
+  }
+  setTimeout(() => {
+    window.addEventListener('mousedown', closeRingDropdownOutside, { once: true })
+  }, 0)
+}
+
+function closeRingDropdownOutside() {
+  ringDropdown.value.visible = false
+}
+
+function selectRingItem(idx: number) {
+  const el = ringDropdown.value.target
+  if (el && typeof el.selectItem === 'function') {
+    el.selectItem(idx)
+  }
+  ringDropdown.value.visible = false
+}
+// ========== END RING DROPDOWN ==========
+
 function onSpaceDown(e: KeyboardEvent) {
   if (e.code !== 'Space' || isPanning) return
   isPanning = true
@@ -284,6 +359,7 @@ onMounted(() => {
   canvas.on('object:removed', updateGraphs)
   canvas.on('after:render', () => { refreshInlinePosition(); graphsVersion.value++ })
   canvas.on('element:edit-number', (e: any) => openInlineEditor(e.target))
+  canvas.on('element:open-dropdown', (e: any) => openRingDropdown(e.target))
 
   resizeObserver = new ResizeObserver(([entry]) => {
     canvas.setDimensions({

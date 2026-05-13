@@ -46,7 +46,7 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
     const border = new fabric.Rect({
       width,
       height,
-      fill: '#dcdcdc',
+      fill: '#d1d5db',
       stroke: '#ccc',
       strokeWidth: 1,
       rx: 4,

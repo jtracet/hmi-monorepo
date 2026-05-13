@@ -51,7 +51,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
     const btnLeft = new fabric.Rect({
       width: btnW,
       height,
-      fill: '#e5e7eb',
+      fill: '#d1d5db',
       stroke: '#ccc',
       strokeWidth: 1,
       rx: 4,
@@ -102,7 +102,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
     const btnRight = new fabric.Rect({
       width: btnW,
       height,
-      fill: '#e5e7eb',
+      fill: '#d1d5db',
       stroke: '#ccc',
       strokeWidth: 1,
       rx: 4,
@@ -177,21 +177,21 @@ export class NumberControl extends BaseElement<NumControlProps> {
       const halfCenter = centerW / 2
 
       if (localX < -halfCenter) {
-        this.btnLeft.set('fill', '#d1d5db')
-        this.btnRight.set('fill', '#e5e7eb')
-      } else if (localX > halfCenter) {
+        this.btnLeft.set('fill', '#9ca3af')
         this.btnRight.set('fill', '#d1d5db')
-        this.btnLeft.set('fill', '#e5e7eb')
+      } else if (localX > halfCenter) {
+        this.btnRight.set('fill', '#9ca3af')
+        this.btnLeft.set('fill', '#d1d5db')
       } else {
-        this.btnLeft.set('fill', '#e5e7eb')
-        this.btnRight.set('fill', '#e5e7eb')
+        this.btnLeft.set('fill', '#d1d5db')
+        this.btnRight.set('fill', '#d1d5db')
       }
       this.canvas?.requestRenderAll()
     })
 
     this.on('mouseout', () => {
-      this.btnLeft.set('fill', '#e5e7eb')
-      this.btnRight.set('fill', '#e5e7eb')
+      this.btnLeft.set('fill', '#d1d5db')
+      this.btnRight.set('fill', '#d1d5db')
       this.canvas?.requestRenderAll()
     })
   }
@@ -245,3 +245,4 @@ export class NumberControl extends BaseElement<NumControlProps> {
     })
   }
 }
+

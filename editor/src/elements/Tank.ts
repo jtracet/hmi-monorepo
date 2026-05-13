@@ -41,7 +41,7 @@ export class Tank extends BaseElement<TankProps> {
       maxValue: 100,
       value: 0,
       fillColor: '#4caf50',
-      emptyColor: '#f5f5f5',
+      emptyColor: '#d1d5db',
       borderColor: '#333',
       showValue: true,
       valueFontSize: 12,

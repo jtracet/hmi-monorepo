@@ -92,7 +92,7 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
 
     const btnDrop = new fabric.Rect({
       width: btnW, height: h,
-      fill: '#e5e7eb', stroke: '#ccc', strokeWidth: 1,
+      fill: '#d1d5db', stroke: '#ccc', strokeWidth: 1,
       rx: 3, ry: 3,
       originX: 'center', originY: 'center',
       left: cw / 2 - btnW / 2, top: 0,
@@ -137,12 +137,12 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
       const center  = this.getCenterPoint()
       const localX  = pointer.x - center.x
       const inBtn   = localX > this.customProps.elementWidth / 2 - this.btnW
-      this.btnDrop.set('fill', inBtn ? '#d1d5db' : '#e5e7eb')
+      this.btnDrop.set('fill', inBtn ? '#9ca3af' : '#d1d5db')
       this.canvas?.requestRenderAll()
     })
 
     this.on('mouseout', () => {
-      this.btnDrop.set('fill', '#e5e7eb')
+      this.btnDrop.set('fill', '#d1d5db')
       this.canvas?.requestRenderAll()
     })
   }
@@ -230,3 +230,4 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     })
   }
 }
+

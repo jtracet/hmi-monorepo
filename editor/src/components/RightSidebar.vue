@@ -1,7 +1,7 @@
 <template>
   <div v-bind="$attrs" class="w-80 bg-gray-50 border-l p-4 overflow-y-auto text-sm">
     <template v-if="sel">
-      <h2 class="font-semibold text-lg mb-3 capitalize">{{ sel.elementType }}</h2>
+      <h2 class="font-semibold text-lg mb-3">{{ displayName }}</h2>
 
       <!-- layer controls -->
       <details open class="mb-4">
@@ -349,6 +349,7 @@ import {
 import { ArrowUp, ArrowDown } from '@vicons/ionicons5'
 import type { fabric } from 'fabric'
 import { useSessionStore } from '../store/session'
+import { getElementDisplayName } from '../elements/displayNames'
 
 function looksLikeColor(val: any, key = ''): boolean {
   return typeof val === 'string' &&
@@ -360,6 +361,10 @@ function looksLikeColor(val: any, key = ''): boolean {
 
 const props = defineProps<{ selected: fabric.Object | null }>()
 const sel = computed(() => props.selected)
+const displayName = computed(() => {
+  const t = (sel.value as any)?.elementType
+  return t ? getElementDisplayName(t) : ''
+})
 
 const layerIndex = ref(0)
 const maxLayer = ref(0)

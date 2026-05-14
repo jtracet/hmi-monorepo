@@ -95,8 +95,9 @@ export class GraphElement extends BaseElement<GraphProps> {
       fontFamily: this.customProps.fontFamily ?? 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight ?? 'normal',
     })
-    this.addWithUpdate()
+    this.stableAddWithUpdate()
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
 }
+

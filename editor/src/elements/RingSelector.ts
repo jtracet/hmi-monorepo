@@ -115,14 +115,6 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
 
     super(canvas, x, y, [border, text, btnDrop, arrowDrop], p)
 
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center', left: 0,
-      fontFamily: p.fontFamily,
-      fontWeight: p.fontWeight,
-    })
-
     this.txt      = text
     this.border   = border
     this.btnDrop  = btnDrop
@@ -215,15 +207,8 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
       fontWeight: p.fontWeight || 'normal',
       left: -(bw / 2),
     })
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      left: 0,
-      fontFamily: p.fontFamily || 'Arial, sans-serif',
-      fontWeight: p.fontWeight || 'normal',
-    })
-    this.addWithUpdate()
-    this.applyLabelLayout(h / 2)
+    this.stableAddWithUpdate()
+    this.applyLabelLayout()
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
@@ -245,4 +230,6 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     })
   }
 }
+
+
 

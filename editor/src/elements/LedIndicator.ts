@@ -47,14 +47,6 @@ export class LedIndicator extends BaseElement<LedProps> {
 
         this.circle = circle
 
-        this.label.set({
-            text: props.label,
-            fontSize: props.labelFontSize,
-            originX: 'center', left: 0,
-            fontFamily: props.fontFamily,
-            fontWeight: props.fontWeight,
-        })
-
         this.on('mouseup', (e) => {
             if (!this.isRuntime) return
             e.e.preventDefault()
@@ -66,19 +58,12 @@ export class LedIndicator extends BaseElement<LedProps> {
     }
 
     updateFromProps() {
-        const { onColor, offColor, label, labelFontSize, fontFamily, fontWeight } = this.customProps
+        const { onColor, offColor } = this.customProps
         const r = this.customProps.radius ?? 15
 
         this.circle.set({ radius: r })
-        this.label.set({
-            text: label,
-            fontSize: labelFontSize,
-            left: 0,
-            fontFamily: fontFamily || 'Arial, sans-serif',
-            fontWeight: fontWeight || 'normal'
-        })
-        this.addWithUpdate()
-        this.applyLabelLayout(r)
+        this.stableAddWithUpdate()
+        this.applyLabelLayout()
         this.setCoords()
         this.circle.set({ fill: this._state ? onColor : offColor })
         this.canvas?.requestRenderAll()
@@ -99,3 +84,5 @@ export class LedIndicator extends BaseElement<LedProps> {
         this.canvas?.fire('element:output', { target: this, name: 'value', value: this._state })
     }
 }
+
+

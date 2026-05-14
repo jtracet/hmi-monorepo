@@ -61,12 +61,6 @@ export class NumberInput extends BaseElement<NumInputProps> {
 
     super(canvas, x, y, [border, text], p)
 
-    this.label.set({
-      text: p.label, fontSize: p.labelFontSize,
-      originX: 'center', left: 0,
-      fontFamily: p.fontFamily, fontWeight: p.fontWeight
-    })
-
     this.txt = text
     this.border = border
 
@@ -119,8 +113,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
-    this.addWithUpdate()
-    this.applyLabelLayout(h / 2)
+    this.stableAddWithUpdate()
+    this.applyLabelLayout()
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
@@ -129,3 +123,5 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.canvas?.fire('element:output', { target: this, name: 'value', value: this.customProps.value })
   }
 }
+
+

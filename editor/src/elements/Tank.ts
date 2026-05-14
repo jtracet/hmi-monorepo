@@ -70,10 +70,16 @@ export class Tank extends BaseElement<TankProps> {
       left: 0, top: 0
     })
 
+    // fillRect uses originY:'center' so its bounding box stays symmetric
+    // and never expands the group upward when the fill grows.
+    // We position it so its bottom edge aligns with the container bottom.
+    // bottom of container = H/2 - padding
+    // center of fillRect  = H/2 - padding - fillHeight/2
+    // We start with height=0, center at H/2 - padding (bottom edge).
     const fillRect = new fabric.Rect({
       width: W - padding * 2, height: 0,
       fill: p.fillColor,
-      originX: 'center', originY: 'bottom',
+      originX: 'center', originY: 'center',
       left: 0, top: H / 2 - padding,
       rx: 2, ry: 2
     })
@@ -93,11 +99,6 @@ export class Tank extends BaseElement<TankProps> {
     this.valueText = valueText
     this._padding = padding
 
-    this.label.set({
-      text: p.label, fontSize: p.labelFontSize,
-      originX: 'center', left: 0
-    })
-
     this.setValue(p.value)
   }
 
@@ -108,12 +109,19 @@ export class Tank extends BaseElement<TankProps> {
     const minValue = Number(this.customProps.minValue) || 0
     const maxValue = Number(this.customProps.maxValue) || 100
     const H = this.getH()
+    const padding = this._padding
 
     this.currentValue = Math.max(minValue, Math.min(maxValue, value))
     const percent = (this.currentValue - minValue) / (maxValue - minValue || 1)
-    const fillHeight = (H - this._padding * 2) * percent
+    const fillHeight = (H - padding * 2) * percent
 
-    this.fillRect.set({ height: fillHeight })
+    // Keep fillRect bottom edge at H/2 - padding, grow upward.
+    // center = bottomEdge - fillHeight/2
+    const bottomEdge = H / 2 - padding
+    this.fillRect.set({
+      height: fillHeight,
+      top: fillHeight > 0 ? bottomEdge - fillHeight / 2 : bottomEdge,
+    })
     this.valueText.set({ text: this.customProps.showValue ? this.currentValue.toFixed(1) : '' })
     this.canvas?.requestRenderAll()
   }
@@ -122,30 +130,36 @@ export class Tank extends BaseElement<TankProps> {
     const p = this.customProps
     const W = this.getW()
     const H = this.getH()
+    const padding = this._padding
 
     this.container.set({ width: W, height: H, fill: p.emptyColor, stroke: p.borderColor })
-    this.fillRect.set({ width: W - this._padding * 2, fill: p.fillColor, top: H / 2 - this._padding })
+    this.fillRect.set({
+      width: W - padding * 2,
+      fill: p.fillColor,
+    })
     this.valueText.set({
       fontSize: p.valueFontSize,
       top: -H / 2 + 15,
       fontFamily: p.fontFamily ?? 'Arial, sans-serif',
       fontWeight: p.fontWeight ?? 'normal'
     })
-    this.label.set({
-      text: p.label, fontSize: p.labelFontSize,
-      left: 0,
-      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
-      fontWeight: p.fontWeight ?? 'normal'
-    })
 
-    this.addWithUpdate()
-    this.applyLabelLayout(H / 2)
-    this.setCoords()
-    this.updateIndicatorPosition()
+    // Set the fill to its final position BEFORE addWithUpdate so the
+    // bounding box is computed from the correct final state.
     this.setValue(Number(p.value) || 0)
+
+    this.stableAddWithUpdate()
+    // Force correct dimensions — addWithUpdate may compute slightly different
+    // values due to strokeWidth or asymmetric children.
+    this.width  = W
+    this.height = H
+    this.applyLabelLayout()
+    this.updateIndicatorPosition()
+    this.canvas?.requestRenderAll()
   }
 
   setState({ value }: { value?: number }) {
     if (value != null && Number.isFinite(value)) this.setValue(value)
   }
 }
+

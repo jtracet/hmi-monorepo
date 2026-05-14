@@ -65,14 +65,6 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.background = background
         this.slider = slider
 
-        this.label.set({
-            text: props.label,
-            fontSize: props.labelFontSize,
-            originX: 'center', left: 0,
-            fontFamily: props.fontFamily,
-            fontWeight: props.fontWeight
-        })
-
         this.on('mouseup', (e) => {
             if (!this.isRuntime) return
             e.e.preventDefault()
@@ -120,21 +112,14 @@ export class ToggleButton extends BaseElement<ToggleProps> {
 
         this.background.set({ width: bgW, height: bgH, rx: bgH / 2, ry: bgH / 2, fill: bgColor, dirty: true })
         this.slider.set({ width: slSize, height: slSize, rx: slSize / 2, ry: slSize / 2 })
-        this.label.set({
-            text: this.customProps.label,
-            fontSize: this.customProps.labelFontSize,
-            left: 0,
-            fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
-            fontWeight: this.customProps.fontWeight || 'normal'
-        })
 
         this.slider.animate('left', targetX, {
             duration: 150,
             onChange: () => this.canvas?.requestRenderAll(),
         })
 
-        this.addWithUpdate()
-        this.applyLabelLayout(bgH / 2)
+        this.stableAddWithUpdate()
+        this.applyLabelLayout()
         this.setCoords()
         this.canvas?.requestRenderAll()
     }
@@ -147,3 +132,5 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.updateVisuals()
     }
 }
+
+

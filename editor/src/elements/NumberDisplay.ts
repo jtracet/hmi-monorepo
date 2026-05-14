@@ -61,12 +61,6 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
 
     super(canvas, x, y, [border, text], p)
 
-    this.label.set({
-      text: p.label, fontSize: p.labelFontSize,
-      originX: 'center', left: 0,
-      fontFamily: p.fontFamily, fontWeight: p.fontWeight
-    })
-
     this.txt = text
     this.border = border
   }
@@ -87,8 +81,8 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
-    this.addWithUpdate()
-    this.applyLabelLayout(h / 2)
+    this.stableAddWithUpdate()
+    this.applyLabelLayout()
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
@@ -108,3 +102,5 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
     this.canvas?.requestRenderAll()
   }
 }
+
+

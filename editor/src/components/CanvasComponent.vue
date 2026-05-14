@@ -547,6 +547,7 @@ function onMouseUp(e?: MouseEvent) {
       const selectionArea = new fabric.Rect({ left, top, width, height, absolutePositioned: true })
       const objects = canvas.getObjects().filter(obj => {
         if (obj === selectionArea) return false
+        if ((obj as any).isElementLabel) return false
         return obj.intersectsWithObject(selectionArea) || obj.isContainedWithinObject(selectionArea) || selectionArea.isContainedWithinObject(obj)
       })
       if (objects.length === 1) {
@@ -587,7 +588,9 @@ function handleDrop(e: DragEvent) {
     picker.click()
     return
   }
-  new ElementRegistry[type](canvas, pointer.x, pointer.y)
+  const el = new ElementRegistry[type](canvas, pointer.x, pointer.y)
+  ;(el as any).updateFromProps?.()
+  canvas.requestRenderAll()
   canvas.requestRenderAll()
 }
 
@@ -802,7 +805,7 @@ function loadPage(canvasJson: any | null, view?: { zoom: number; offsetX: number
 
   canvas.on('object:added', snapshot)
 
-  const allObjects = canvas.getObjects()
+  const allObjects = canvas.getObjects().filter((o: any) => !o.isElementLabel)
   if (allObjects.length > 0) {
     const warmup = new fabric.ActiveSelection(allObjects, { canvas })
     canvas.setActiveObject(warmup)

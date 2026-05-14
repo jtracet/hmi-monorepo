@@ -14,15 +14,18 @@ interface SavedBindings {
 export abstract class BaseElement<TProps = Record<string, any>> extends fabric.Group {
     static elementType: string
     static category: string
-
     static meta: ElementMeta
 
     customProps!: TProps
     bindingsData: SavedBindings = { inputs: {}, outputs: {} }
     private _bindings: SavedBindings = { inputs: {}, outputs: {} }
     public id: any
-    public label!: fabric.Text  
-    
+
+    // label lives OUTSIDE the group — never affects addWithUpdate()
+    public label!: fabric.Text
+
+    private _labelGap = 4
+
     protected bindIndicator!: fabric.Circle | null
     protected showBindIndicator: boolean = true
 
@@ -34,18 +37,9 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         props: TProps,
         options?: { showBindIndicator?: boolean }
     ) {
-        const label = new fabric.Text(' ', {
-            fontSize: 14,
-            fill: '#000',
-            originX: 'center',
-            originY: 'top',
-            left: 0,
-            top: (children[0]?.height ?? 0) / 2 + 5 
-        })
-
         let bindIndicator: fabric.Circle | null = null
         const showIndicator = options?.showBindIndicator !== false
-        
+
         if (showIndicator) {
             bindIndicator = new fabric.Circle({
                 radius: 6,
@@ -68,21 +62,18 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
             })
         }
 
-        const allChildren = [...children, label]
-        if (bindIndicator) {
-            allChildren.push(bindIndicator)
-        }
+        const allChildren = [...children]
+        if (bindIndicator) allChildren.push(bindIndicator)
 
         super(allChildren, { left: x, top: y })
 
         this.id = this.id ?? crypto.randomUUID()
         this.customProps = props
-        this.label = label
         this.bindIndicator = bindIndicator
         this.showBindIndicator = showIndicator
 
         ;(this as any).elementType = (this.constructor as any).elementType
-        ;(this as any).meta = (this.constructor as any).meta
+        ;(this as any).meta        = (this.constructor as any).meta
 
         this.hoverCursor = 'pointer'
         this.setControlsVisibility({
@@ -95,138 +86,167 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         this.lockRotation = true
         this.set({ hasControls: false, selectable: true } as any)
 
+        // External label — positioned relative to group center, not inside group
+        const label = new fabric.Text(' ', {
+            fontSize: 14,
+            fill: '#000',
+            originX: 'center',
+            originY: 'top',
+            left: x,
+            top: y + (children[0]?.height ?? 0) / 2 + 5,
+            selectable: false,
+            evented: false,
+            textAlign: 'center',
+            // Exclude from any selection bounding box calculations
+            excludeFromExport: false,
+        })
+        ;(label as any).isElementLabel = true
+        this.label = label
+
+        canvas.add(this)
+        canvas.add(label)
+
+        // Keep label in sync when the group moves/scales
+        this.on('moving',   () => this._syncLabelPosition())
+        this.on('modified', () => this._syncLabelPosition())
+        this.on('scaling',  () => this._syncLabelPosition())
+
         this.on('deselected', () => {
-            this.set({
-                hasControls: false,
-                lockScalingX: true,
-                lockScalingY: true,
-                lockRotation: true
-            } as any)
+            this.set({ hasControls: false, lockScalingX: true, lockScalingY: true, lockRotation: true } as any)
             this.canvas?.requestRenderAll()
         })
 
-        canvas.add(this)
-        
+        // Remove external label when group is removed from canvas
+        this.on('removed', () => {
+            if (this.label?.canvas) this.label.canvas.remove(this.label)
+        })
+
         if (this.bindIndicator) {
             setTimeout(() => {
                 this.updateIndicatorPosition()
                 this.checkBindings()
             }, 0)
         }
+
+        // Initial label sync after canvas has laid out the element
+        setTimeout(() => this._syncLabelPosition(), 0)
     }
 
-    setBindings(bindings: SavedBindings) {
-        this._bindings = {
-            inputs: { ...bindings.inputs },
-            outputs: { ...bindings.outputs }
-        }
-        
-        this.bindingsData = this._bindings
-        
-        this.checkBindings()
-        
-        this.canvas?.requestRenderAll()
-    }
-
-    getBindings(): SavedBindings {
-        return this._bindings
-    }
-
-    get bindings(): SavedBindings {
-        return this._bindings
-    }
-    
-    set bindings(value: SavedBindings) {
-        this.setBindings(value)
-    }
-
-    protected checkBindings() {
-        if (!this.bindIndicator || !this.showBindIndicator) return
-        
-        const hasInputBindings = this._bindings?.inputs && 
-            Object.values(this._bindings.inputs).some(v => v && v.trim() !== '')
-        
-        const hasOutputBindings = this._bindings?.outputs && 
-            Object.values(this._bindings.outputs).some(v => v && v.trim() !== '')
-        
-        const hasAnyBindings = hasInputBindings || hasOutputBindings
-        
-        if (this.bindIndicator) {
-            this.bindIndicator.set('visible', hasAnyBindings)
-            this.canvas?.requestRenderAll()
-        }
-    }
-
-    setState(_: Record<string, any>): void {}
-
-    protected get isRuntime() {
-        return useEditorStore().isRuntime
-    }
-    
-    /**
-     * Apply label position and visibility from customProps.
-     * Call this AFTER addWithUpdate() in every updateFromProps().
-     * @param halfH  half-height of the main visual rect (positive number)
-     * @param gap    extra gap between element edge and label (default 4)
-     */
-    protected applyLabelLayout(halfH: number, gap = 4) {
-        const p = this.customProps as any
-        const visible = p.labelVisible !== false   // default true
+    // ── label sync ────────────────────────────────────────────────────────
+    // Uses this.height (actual group bounding box) so it works correctly
+    // for all elements regardless of their internal child layout.
+    private _syncLabelPosition() {
+        if (!this.label) return
+        const p       = this.customProps as any
+        const visible = p.labelVisible !== false
         const pos     = p.labelPosition ?? 'bottom'
+        const center  = this.getCenterPoint()
+        const halfH   = (this.height ?? 0) / 2
+        const gap     = this._labelGap
 
         if (!visible) {
-            // park label off-screen so it doesn't affect bounding box
-            this.label.set({ opacity: 0, top: 0 })
+            this.label.set({ opacity: 0 })
+            this.label.setCoords()
             return
         }
 
         if (pos === 'top') {
-            // originY:'top' means the text grows downward from `top`.
-            // To place it above the element we use originY:'bottom' so it grows upward.
             this.label.set({
                 opacity: 1,
                 originY: 'bottom',
-                top: -halfH - gap,
+                left: center.x,
+                top:  center.y - halfH - gap,
             })
         } else {
             this.label.set({
                 opacity: 1,
                 originY: 'top',
-                top: halfH + gap,
+                left: center.x,
+                top:  center.y + halfH + gap,
             })
         }
+        this.label.setCoords()
     }
-    
+
+    /**
+     * Call AFTER addWithUpdate() in every updateFromProps().
+     * Updates label text/style and repositions it.
+     * gap — pixels between group edge and label (default 4)
+     */
+    applyLabelLayout(gap = 4) {
+        this._labelGap = gap
+
+        const p = this.customProps as any
+        this.label.set({
+            fontSize:   p.labelFontSize ?? 14,
+            fill:       '#000',
+            fontFamily: p.fontFamily   ?? 'Arial, sans-serif',
+            fontWeight: p.fontWeight   ?? 'normal',
+            text:       p.label        ?? '',
+        })
+
+        this._syncLabelPosition()
+        this.canvas?.requestRenderAll()
+    }
+
+    // Wrapper around addWithUpdate() that preserves the group's geometry
+    // so the selection box never drifts when children change.
+    // Only call this when element SIZE actually changes (width/height/radius).
+    // For color/text/label changes use applyLabelLayout() directly.
+    protected stableAddWithUpdate() {
+        const left = this.left ?? 0
+        const top  = this.top  ?? 0
+        this.addWithUpdate()
+        // Restore position — addWithUpdate may shift left/top when bounding
+        // box changes due to asymmetric children (e.g. fillRect in Tank).
+        this.left = left
+        this.top  = top
+        this.setCoords()
+    }
+    // ── bindings ──────────────────────────────────────────────────────────
+    setBindings(bindings: SavedBindings) {
+        this._bindings = { inputs: { ...bindings.inputs }, outputs: { ...bindings.outputs } }
+        this.bindingsData = this._bindings
+        this.checkBindings()
+        this.canvas?.requestRenderAll()
+    }
+
+    getBindings(): SavedBindings { return this._bindings }
+    get bindings(): SavedBindings { return this._bindings }
+    set bindings(value: SavedBindings) { this.setBindings(value) }
+
+    protected checkBindings() {
+        if (!this.bindIndicator || !this.showBindIndicator) return
+        const hasAny =
+            Object.values(this._bindings.inputs ).some(v => v?.trim()) ||
+            Object.values(this._bindings.outputs).some(v => v?.trim())
+        this.bindIndicator.set('visible', hasAny)
+        this.canvas?.requestRenderAll()
+    }
+
+    setState(_: Record<string, any>): void {}
+
+    protected get isRuntime() { return useEditorStore().isRuntime }
+
     protected updateIndicatorPosition() {
         if (!this.bindIndicator || !this.showBindIndicator) return
-        
-        // Use the group's own bounding box so the indicator always sits
-        // at the top-right corner regardless of child order.
         const w = this.getScaledWidth  ? this.getScaledWidth()  : (this.width  || 60)
         const h = this.getScaledHeight ? this.getScaledHeight() : (this.height || 30)
-        
-        this.bindIndicator.set({
-            left:  w / 2,
-            top:  -h / 2
-        })
+        this.bindIndicator.set({ left: w / 2, top: -h / 2 })
         this.bindIndicator.setCoords()
     }
-    
-    setDimensions(_width: number, _height: number): void {
-        this.updateIndicatorPosition()
-    }
-    
+
+    setDimensions(_width: number, _height: number): void { this.updateIndicatorPosition() }
+
     toObject(propertiesToInclude: string[] = []): any {
         return super.toObject([...propertiesToInclude, 'bindingsData', 'elementType', 'meta', 'customProps'])
     }
-    
+
     fromObject(object: any, callback?: Function) {
-        if (object.bindingsData) {
-            this.setBindings(object.bindingsData)
-        }
+        if (object.bindingsData) this.setBindings(object.bindingsData)
         if (callback) callback()
     }
-    
+
     onRender() {
         if (this.bindIndicator) {
             this.updateIndicatorPosition()

@@ -22,6 +22,53 @@ function findReference(objects: fabric.Object[], mode: ResizeMode, strategy: Ref
     })
 }
 
+function applyDimensions(obj: fabric.Object, targetWidth: number | null, targetHeight: number | null) {
+    const any = obj as any
+    const props = any.customProps
+    const objRect = getBoundingRect(obj)
+    let usedProps = false
+
+    if (props) {
+        if (targetWidth != null && objRect.width > 0) {
+            const scale = targetWidth / objRect.width
+            if ('elementWidth' in props && typeof props.elementWidth === 'number') {
+                props.elementWidth = Math.max(1, props.elementWidth * scale)
+                usedProps = true
+            } else if ('width' in props && typeof props.width === 'number') {
+                props.width = Math.max(1, props.width * scale)
+                usedProps = true
+            } else if ('radius' in props && typeof props.radius === 'number') {
+                props.radius = Math.max(1, props.radius * scale)
+                usedProps = true
+            }
+        }
+        if (targetHeight != null && objRect.height > 0) {
+            const scale = targetHeight / objRect.height
+            if ('elementHeight' in props && typeof props.elementHeight === 'number') {
+                props.elementHeight = Math.max(1, props.elementHeight * scale)
+                usedProps = true
+            } else if ('height' in props && typeof props.height === 'number') {
+                props.height = Math.max(1, props.height * scale)
+                usedProps = true
+            }
+        }
+    }
+
+    if (usedProps && typeof any.updateFromProps === 'function') {
+        any.updateFromProps()
+        obj.setCoords()
+        return
+    }
+
+    if (targetWidth != null && objRect.width > 0) {
+        obj.scaleX = (obj.scaleX ?? 1) * (targetWidth / objRect.width)
+    }
+    if (targetHeight != null && objRect.height > 0) {
+        obj.scaleY = (obj.scaleY ?? 1) * (targetHeight / objRect.height)
+    }
+    obj.setCoords()
+}
+
 function resize(mode: ResizeMode, strategy: RefStrategy) {
     return withCanvas(canvas => {
         const {objects} = getActiveSelection(canvas)
@@ -34,20 +81,9 @@ function resize(mode: ResizeMode, strategy: RefStrategy) {
 
         objects.forEach(obj => {
             if (obj === reference) return
-            const objRect = getBoundingRect(obj)
-
-            if (mode === 'width' || mode === 'both') {
-                if (targetWidth > 0 && objRect.width > 0) {
-                    obj.scaleX = (obj.scaleX ?? 1) * (targetWidth / objRect.width)
-                }
-            }
-            if (mode === 'height' || mode === 'both') {
-                if (targetHeight > 0 && objRect.height > 0) {
-                    obj.scaleY = (obj.scaleY ?? 1) * (targetHeight / objRect.height)
-                }
-            }
-
-            obj.setCoords()
+            const w = (mode === 'width' || mode === 'both') ? targetWidth : null
+            const h = (mode === 'height' || mode === 'both') ? targetHeight : null
+            applyDimensions(obj, w, h)
         })
 
         commitCanvasChange(canvas)

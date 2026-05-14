@@ -12,6 +12,8 @@ interface TankProps {
   valueFontSize: number
   label: string
   labelFontSize: number
+  labelPosition?: string
+  labelVisible?: boolean
   fontFamily?: string
   fontWeight?: string
   elementWidth: number
@@ -47,6 +49,8 @@ export class Tank extends BaseElement<TankProps> {
       valueFontSize: 12,
       label: 'Tank',
       labelFontSize: 14,
+      labelPosition: 'bottom',
+      labelVisible: true,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal',
       elementWidth: 80,
@@ -91,20 +95,14 @@ export class Tank extends BaseElement<TankProps> {
 
     this.label.set({
       text: p.label, fontSize: p.labelFontSize,
-      originX: 'center', originY: 'top',
-      top: H / 2, left: 0
+      originX: 'center', left: 0
     })
 
     this.setValue(p.value)
   }
 
-  private getH(): number {
-    return this.customProps.elementHeight ?? 150
-  }
-
-  private getW(): number {
-    return this.customProps.elementWidth ?? 80
-  }
+  private getH(): number { return this.customProps.elementHeight ?? 150 }
+  private getW(): number { return this.customProps.elementWidth ?? 80 }
 
   private setValue(value: number) {
     const minValue = Number(this.customProps.minValue) || 0
@@ -116,9 +114,7 @@ export class Tank extends BaseElement<TankProps> {
     const fillHeight = (H - this._padding * 2) * percent
 
     this.fillRect.set({ height: fillHeight })
-    this.valueText.set({
-      text: this.customProps.showValue ? this.currentValue.toFixed(1) : ''
-    })
+    this.valueText.set({ text: this.customProps.showValue ? this.currentValue.toFixed(1) : '' })
     this.canvas?.requestRenderAll()
   }
 
@@ -128,11 +124,7 @@ export class Tank extends BaseElement<TankProps> {
     const H = this.getH()
 
     this.container.set({ width: W, height: H, fill: p.emptyColor, stroke: p.borderColor })
-    this.fillRect.set({
-      width: W - this._padding * 2,
-      fill: p.fillColor,
-      top: H / 2 - this._padding
-    })
+    this.fillRect.set({ width: W - this._padding * 2, fill: p.fillColor, top: H / 2 - this._padding })
     this.valueText.set({
       fontSize: p.valueFontSize,
       top: -H / 2 + 15,
@@ -141,20 +133,19 @@ export class Tank extends BaseElement<TankProps> {
     })
     this.label.set({
       text: p.label, fontSize: p.labelFontSize,
-      top: H / 2 + 4,
+      left: 0,
       fontFamily: p.fontFamily ?? 'Arial, sans-serif',
       fontWeight: p.fontWeight ?? 'normal'
     })
 
     this.addWithUpdate()
+    this.applyLabelLayout(H / 2)
     this.setCoords()
     this.updateIndicatorPosition()
     this.setValue(Number(p.value) || 0)
   }
 
   setState({ value }: { value?: number }) {
-    if (value != null && Number.isFinite(value)) {
-      this.setValue(value)
-    }
+    if (value != null && Number.isFinite(value)) this.setValue(value)
   }
 }

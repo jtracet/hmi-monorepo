@@ -9,6 +9,8 @@ export interface RingItem {
 interface RingSelectorProps {
   label: string
   labelFontSize: number
+  labelPosition?: string
+  labelVisible?: boolean
   fontFamily?: string
   fontWeight?: string
   fontSize: number
@@ -44,6 +46,8 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     const defaults: RingSelectorProps = {
       label: 'Ring Selector',
       labelFontSize: 14,
+      labelPosition: 'bottom',
+      labelVisible: true,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal',
       fontSize: 14,
@@ -114,8 +118,7 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     this.label.set({
       text: p.label,
       fontSize: p.labelFontSize,
-      originX: 'center', originY: 'top',
-      top: h / 2.2, left: 0,
+      originX: 'center', left: 0,
       fontFamily: p.fontFamily,
       fontWeight: p.fontWeight,
     })
@@ -215,11 +218,12 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     this.label.set({
       text: p.label,
       fontSize: p.labelFontSize,
-      top: h / 2.2,
+      left: 0,
       fontFamily: p.fontFamily || 'Arial, sans-serif',
       fontWeight: p.fontWeight || 'normal',
     })
     this.addWithUpdate()
+    this.applyLabelLayout(h / 2)
     this.setCoords()
     this.canvas?.requestRenderAll()
   }

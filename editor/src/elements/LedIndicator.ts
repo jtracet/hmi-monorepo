@@ -6,6 +6,8 @@ interface LedProps {
     offColor: string
     label: string
     labelFontSize: number
+    labelPosition?: string
+    labelVisible?: boolean
     fontFamily?: string
     fontWeight?: string
     radius: number
@@ -26,6 +28,8 @@ export class LedIndicator extends BaseElement<LedProps> {
             offColor: '#d1d5db',
             label: 'LED Indicator',
             labelFontSize: 14,
+            labelPosition: 'bottom',
+            labelVisible: true,
             fontFamily: 'Arial, sans-serif',
             fontWeight: 'normal',
             radius: 15,
@@ -46,18 +50,18 @@ export class LedIndicator extends BaseElement<LedProps> {
         this.label.set({
             text: props.label,
             fontSize: props.labelFontSize,
+            originX: 'center', left: 0,
             fontFamily: props.fontFamily,
             fontWeight: props.fontWeight,
-            top: props.radius + 5,
         })
 
         this.on('mouseup', (e) => {
             if (!this.isRuntime) return
             e.e.preventDefault()
             e.e.stopPropagation()
-        this._state = !this._state
-        this.updateVisuals()
-        this.emitState()
+            this._state = !this._state
+            this.updateVisuals()
+            this.emitState()
         })
     }
 
@@ -69,13 +73,13 @@ export class LedIndicator extends BaseElement<LedProps> {
         this.label.set({
             text: label,
             fontSize: labelFontSize,
-            top: r + 5,
+            left: 0,
             fontFamily: fontFamily || 'Arial, sans-serif',
             fontWeight: fontWeight || 'normal'
         })
         this.addWithUpdate()
+        this.applyLabelLayout(r)
         this.setCoords()
-        // update color after addWithUpdate to avoid label drift
         this.circle.set({ fill: this._state ? onColor : offColor })
         this.canvas?.requestRenderAll()
     }
@@ -92,8 +96,6 @@ export class LedIndicator extends BaseElement<LedProps> {
     }
 
     private emitState() {
-        this.canvas?.fire('element:output', {
-            target: this, name: 'value', value: this._state
-        })
+        this.canvas?.fire('element:output', { target: this, name: 'value', value: this._state })
     }
 }

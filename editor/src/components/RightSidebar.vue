@@ -34,6 +34,26 @@
             size="small"
             @update:value="applyProps"
           />
+
+          <div class="flex items-center gap-3 mt-2">
+            <div class="flex-1">
+              <label class="block mb-1">Позиция метки</label>
+              <n-select
+                v-model:value="propsProxy.labelPosition"
+                :options="[{label:'Снизу',value:'bottom'},{label:'Сверху',value:'top'}]"
+                size="small"
+                @update:value="applyProps"
+              />
+            </div>
+            <div class="flex items-center gap-1 mt-4">
+              <n-switch
+                v-model:value="propsProxy.labelVisible"
+                size="small"
+                @update:value="applyProps"
+              />
+              <span class="text-xs text-gray-500">Видна</span>
+            </div>
+          </div>
         </div>
 
         <!-- Шрифт и жирность (специальные поля) -->
@@ -340,7 +360,8 @@ import {
   NSelect,
   NIcon,
   NInputNumber,
-  NColorPicker
+  NColorPicker,
+  NSwitch
 } from 'naive-ui'
 import { ArrowUp, ArrowDown } from '@vicons/ionicons5'
 import type { fabric } from 'fabric'
@@ -470,6 +491,8 @@ const filteredKeys = computed(() =>
   Object.keys(propsProxy).filter(k => 
     k !== 'label' && 
     k !== 'labelFontSize' && 
+    k !== 'labelPosition' &&
+    k !== 'labelVisible' &&
     k !== 'fontFamily' && 
     k !== 'fontWeight' &&
     k !== 'elementWidth' &&

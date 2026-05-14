@@ -6,6 +6,8 @@ interface NumInputProps {
   fontSize: number
   label: string
   labelFontSize: number
+  labelPosition?: string
+  labelVisible?: boolean
   fontFamily?: string
   fontWeight?: string
   elementWidth: number
@@ -32,6 +34,8 @@ export class NumberInput extends BaseElement<NumInputProps> {
       fontSize: 24,
       label: 'Numeric Input',
       labelFontSize: 14,
+      labelPosition: 'bottom',
+      labelVisible: true,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal',
       elementWidth: 120,
@@ -39,46 +43,28 @@ export class NumberInput extends BaseElement<NumInputProps> {
     }
     const p = { ...defaults, ...props }
 
-    const width = p.elementWidth
-    const height = p.elementHeight
-
     const border = new fabric.Rect({
-      width,
-      height,
-      fill: 'transparent',
-      stroke: '#ccc',
-      strokeWidth: 1,
-      rx: 4,
-      ry: 4,
-      originX: 'center',
-      originY: 'center',
-      left: 0,
-      top: 0
+      width: p.elementWidth, height: p.elementHeight,
+      fill: 'transparent', stroke: '#ccc', strokeWidth: 1,
+      rx: 4, ry: 4,
+      originX: 'center', originY: 'center',
+      left: 0, top: 0
     })
 
     const text = new fabric.Text(String(p.value), {
-      fontSize: p.fontSize,
-      fill: '#000',
-      originX: 'center',
-      originY: 'center',
-      left: 0,
-      top: 0,
+      fontSize: p.fontSize, fill: '#000',
+      originX: 'center', originY: 'center',
+      left: 0, top: 0,
       textAlign: 'center',
-      fontFamily: p.fontFamily,
-      fontWeight: p.fontWeight
+      fontFamily: p.fontFamily, fontWeight: p.fontWeight
     })
 
     super(canvas, x, y, [border, text], p)
 
     this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center',
-      originY: 'top',
-      top: height / 2.2,
-      left: 0,
-      fontFamily: p.fontFamily,
-      fontWeight: p.fontWeight
+      text: p.label, fontSize: p.labelFontSize,
+      originX: 'center', left: 0,
+      fontFamily: p.fontFamily, fontWeight: p.fontWeight
     })
 
     this.txt = text
@@ -86,17 +72,13 @@ export class NumberInput extends BaseElement<NumInputProps> {
 
     this.on('mouseup', (e) => {
       if (!this.isRuntime) return
-
       e.e.preventDefault()
       e.e.stopPropagation()
-
-      // fire event — CanvasComponent will show inline editor
       this.canvas?.fire('element:edit-number', { target: this })
     })
   }
 
-  // returns the border rect dimensions and center offset for inline editor positioning
-  getInputRect(): { width: number; height: number; offsetX: number; offsetY: number } {
+  getInputRect() {
     return {
       width: this.border.width ?? 120,
       height: this.border.height ?? 40,
@@ -105,7 +87,6 @@ export class NumberInput extends BaseElement<NumInputProps> {
     }
   }
 
-  // called by CanvasComponent when user confirms inline input
   commitValue(raw: string) {
     const n = Number(raw)
     if (!Number.isFinite(n)) return
@@ -115,7 +96,6 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.emitState()
   }
 
-  // highlight border while editing
   setEditing(active: boolean) {
     this.border.set('stroke', active ? '#3b82f6' : '#ccc')
     this.txt.set('fill', active ? '#3b82f6' : '#000')
@@ -135,20 +115,17 @@ export class NumberInput extends BaseElement<NumInputProps> {
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
-      top: h / 2.2,
+      left: 0,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
     this.addWithUpdate()
+    this.applyLabelLayout(h / 2)
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
 
   private emitState() {
-    this.canvas?.fire('element:output', {
-      target: this,
-      name: 'value',
-      value: this.customProps.value
-    })
+    this.canvas?.fire('element:output', { target: this, name: 'value', value: this.customProps.value })
   }
 }

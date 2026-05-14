@@ -4,6 +4,8 @@ import { BaseElement } from './BaseElement'
 interface ToggleProps {
     label: string
     labelFontSize: number
+    labelPosition?: string
+    labelVisible?: boolean
     fontFamily?: string
     fontWeight?: string
     elementWidth: number
@@ -24,6 +26,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         const props: ToggleProps = {
             label: 'Slide Switch',
             labelFontSize: 14,
+            labelPosition: 'bottom',
+            labelVisible: true,
             fontFamily: 'Arial, sans-serif',
             fontWeight: 'normal',
             elementWidth: 60,
@@ -64,6 +68,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.label.set({
             text: props.label,
             fontSize: props.labelFontSize,
+            originX: 'center', left: 0,
             fontFamily: props.fontFamily,
             fontWeight: props.fontWeight
         })
@@ -91,7 +96,6 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         return this._state
     }
 
-    // lightweight: only color + slider animation, no addWithUpdate
     private animateSlider() {
         const bgW = this.customProps.elementWidth ?? 60
         const bgH = Math.round(bgW * 0.5)
@@ -106,7 +110,6 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.canvas?.requestRenderAll()
     }
 
-    // full update: sizes + layout, called from RightSidebar
     private updateVisuals() {
         const bgW = this.customProps.elementWidth ?? 60
         const bgH = Math.round(bgW * 0.5)
@@ -120,7 +123,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         this.label.set({
             text: this.customProps.label,
             fontSize: this.customProps.labelFontSize,
-            top: bgH / 2.2,
+            left: 0,
             fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
             fontWeight: this.customProps.fontWeight || 'normal'
         })
@@ -131,14 +134,13 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         })
 
         this.addWithUpdate()
+        this.applyLabelLayout(bgH / 2)
         this.setCoords()
         this.canvas?.requestRenderAll()
     }
 
     private emitState() {
-        this.canvas?.fire('element:output', {
-            target: this, name: 'state', value: this._state
-        })
+        this.canvas?.fire('element:output', { target: this, name: 'state', value: this._state })
     }
 
     updateFromProps() {

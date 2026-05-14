@@ -163,6 +163,40 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         return useEditorStore().isRuntime
     }
     
+    /**
+     * Apply label position and visibility from customProps.
+     * Call this AFTER addWithUpdate() in every updateFromProps().
+     * @param halfH  half-height of the main visual rect (positive number)
+     * @param gap    extra gap between element edge and label (default 4)
+     */
+    protected applyLabelLayout(halfH: number, gap = 4) {
+        const p = this.customProps as any
+        const visible = p.labelVisible !== false   // default true
+        const pos     = p.labelPosition ?? 'bottom'
+
+        if (!visible) {
+            // park label off-screen so it doesn't affect bounding box
+            this.label.set({ opacity: 0, top: 0 })
+            return
+        }
+
+        if (pos === 'top') {
+            // originY:'top' means the text grows downward from `top`.
+            // To place it above the element we use originY:'bottom' so it grows upward.
+            this.label.set({
+                opacity: 1,
+                originY: 'bottom',
+                top: -halfH - gap,
+            })
+        } else {
+            this.label.set({
+                opacity: 1,
+                originY: 'top',
+                top: halfH + gap,
+            })
+        }
+    }
+    
     protected updateIndicatorPosition() {
         if (!this.bindIndicator || !this.showBindIndicator) return
         

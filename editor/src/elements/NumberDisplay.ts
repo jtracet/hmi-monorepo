@@ -6,6 +6,8 @@ interface NumDisplayProps {
   precision: number
   label: string
   labelFontSize: number
+  labelPosition?: string
+  labelVisible?: boolean
   fontFamily?: string
   fontWeight?: string
   elementWidth: number
@@ -16,7 +18,6 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
   static elementType = 'numDisplay'
   static category = 'numeric'
   static subcategory = 'indicators'
-
   static meta = { inputs: ['value'], outputs: [] } satisfies ElementMeta
 
   private txt: fabric.Text
@@ -33,6 +34,8 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
       precision: 2,
       label: 'Numeric Indicator',
       labelFontSize: 14,
+      labelPosition: 'bottom',
+      labelVisible: true,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal',
       elementWidth: 120,
@@ -40,46 +43,28 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
     }
     const p = { ...defaults, ...props }
 
-    const width = p.elementWidth
-    const height = p.elementHeight
-
     const border = new fabric.Rect({
-      width,
-      height,
-      fill: '#d1d5db',
-      stroke: '#ccc',
-      strokeWidth: 1,
-      rx: 4,
-      ry: 4,
-      originX: 'center',
-      originY: 'center',
-      left: 0,
-      top: 0
+      width: p.elementWidth, height: p.elementHeight,
+      fill: '#d1d5db', stroke: '#ccc', strokeWidth: 1,
+      rx: 4, ry: 4,
+      originX: 'center', originY: 'center',
+      left: 0, top: 0
     })
 
     const text = new fabric.Text('--', {
-      fontSize: p.fontSize,
-      fill: '#000',
-      originX: 'center',
-      originY: 'center',
-      left: 0,
-      top: 0,
+      fontSize: p.fontSize, fill: '#000',
+      originX: 'center', originY: 'center',
+      left: 0, top: 0,
       textAlign: 'center',
-      fontFamily: p.fontFamily,
-      fontWeight: p.fontWeight
+      fontFamily: p.fontFamily, fontWeight: p.fontWeight
     })
 
     super(canvas, x, y, [border, text], p)
 
     this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center',
-      originY: 'top',
-      top: height / 2.2,
-      left: 0,
-      fontFamily: p.fontFamily,
-      fontWeight: p.fontWeight
+      text: p.label, fontSize: p.labelFontSize,
+      originX: 'center', left: 0,
+      fontFamily: p.fontFamily, fontWeight: p.fontWeight
     })
 
     this.txt = text
@@ -98,24 +83,23 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
-      top: h / 2.2,
+      left: 0,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
     this.addWithUpdate()
+    this.applyLabelLayout(h / 2)
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
 
   setState({ value }: { value?: number }) {
     if (value == null) return
-
     let displayText = '--'
     if (Number.isFinite(value)) {
       displayText = Number(value).toFixed(this.customProps.precision)
       if (displayText.length > 10) displayText = displayText.slice(0, 10)
     }
-
     this.txt.set({
       text: displayText,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',

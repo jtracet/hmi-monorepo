@@ -7,6 +7,8 @@ interface NumControlProps {
   fontSize: number
   label: string
   labelFontSize: number
+  labelPosition?: string
+  labelVisible?: boolean
   fontFamily?: string
   fontWeight?: string
   elementHeight: number
@@ -42,6 +44,8 @@ export class NumberControl extends BaseElement<NumControlProps> {
       fontSize: 18,
       label: 'Numeric Control',
       labelFontSize: 14,
+      labelPosition: 'bottom',
+      labelVisible: true,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal',
       elementHeight: 40,
@@ -199,14 +203,13 @@ export class NumberControl extends BaseElement<NumControlProps> {
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
-      top: h / 2.2,
+      left: 0,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
     this.addWithUpdate()
+    this.applyLabelLayout(h / 2)
     this.setCoords()
-
-    // update value text without triggering another addWithUpdate
     this.txt.set({
       text: String(this.customProps.value),
       fontSize: this.customProps.fontSize,

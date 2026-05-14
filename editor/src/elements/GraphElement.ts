@@ -59,16 +59,8 @@ export class GraphElement extends BaseElement<GraphProps> {
       evented: false,
     })
 
+    // label is external — do NOT set left/top here, applyLabelLayout handles it
     super(canvas, x, y, [rect, text], p)
-
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center',
-      originY: 'top',
-      top: p.height / 2 + 20,
-      left: 0,
-    })
   }
 
   setState(state: Record<string, any>) {
@@ -88,16 +80,8 @@ export class GraphElement extends BaseElement<GraphProps> {
     const rect = this.getObjects().find(o => o.type === 'rect') as fabric.Rect | undefined
     if (rect) rect.set({ width: w, height: h })
 
-    this.label.set({
-      text: this.customProps.label,
-      fontSize: this.customProps.labelFontSize,
-      top: h / 2 + 20,
-      fontFamily: this.customProps.fontFamily ?? 'Arial, sans-serif',
-      fontWeight: this.customProps.fontWeight ?? 'normal',
-    })
     this.stableAddWithUpdate()
-    this.setCoords()
+    this.applyLabelLayout()
     this.canvas?.requestRenderAll()
   }
 }
-

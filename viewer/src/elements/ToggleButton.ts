@@ -3,7 +3,10 @@ import { BaseElement } from './BaseElement'
 
 interface ToggleProps {
     label: string
-    labelFontSize: number   
+    labelFontSize: number
+    fontFamily?: string
+    fontWeight?: string
+    elementWidth?: number
 }
 
 export class ToggleButton extends BaseElement<ToggleProps> {
@@ -17,35 +20,43 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     private _state = false
     private lastClickTime = 0
 
-    constructor(canvas: fabric.Canvas, x: number, y: number) {
-        const props: ToggleProps = { 
+    constructor(canvas: fabric.Canvas, x: number, y: number, propsInit: Partial<ToggleProps> = {}) {
+        const defaults: ToggleProps = {
             label: 'Slide Switch',
-            labelFontSize: 14       
+            labelFontSize: 14,
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'normal',
+            elementWidth: 60,
         }
+        const props = { ...defaults, ...propsInit }
+
+        const bgW = props.elementWidth ?? 60
+        const bgH = Math.round(bgW * 0.5)
+        const slSize = Math.round(bgH * 0.87)
 
         const background = new fabric.Rect({
-            width: 60,
-            height: 30,
-            rx: 15,
-            ry: 15,
+            width: bgW,
+            height: bgH,
+            rx: bgH / 2,
+            ry: bgH / 2,
             fill: '#d1d5db',
             originX: 'center',
             originY: 'center',
             selectable: false,
-            evented: false   
+            evented: false
         })
 
         const slider = new fabric.Rect({
-            width: 26,
-            height: 26,
-            rx: 13,
-            ry: 13,
+            width: slSize,
+            height: slSize,
+            rx: slSize / 2,
+            ry: slSize / 2,
             fill: '#fff',
-            left: -15,
+            left: -Math.round(bgW * 0.2),
             originX: 'center',
             originY: 'center',
             selectable: false,
-            evented: false  
+            evented: false
         })
 
         super(canvas, x, y, [background, slider], props)
@@ -57,7 +68,10 @@ export class ToggleButton extends BaseElement<ToggleProps> {
 
         this.label.set({
             text: props.label,
-            fontSize: props.labelFontSize  
+            fontSize: props.labelFontSize,
+            fontFamily: props.fontFamily,
+            fontWeight: props.fontWeight,
+            top: bgH / 2.2,
         })
 
         this.on('mouseup', () => {
@@ -83,17 +97,34 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     }
 
     private updateVisuals() {
-        const targetX = this._state ? 12 : -12
+        const bgW = this.customProps.elementWidth ?? 60
+        const bgH = Math.round(bgW * 0.5)
+        const slSize = Math.round(bgH * 0.87)
+        const travel = Math.round(bgW * 0.2)
+        const targetX = this._state ? travel : -travel
         const bgColor = this._state ? '#3b82f6' : '#d1d5db'
+
+        this.background.set({
+            width: bgW,
+            height: bgH,
+            rx: bgH / 2,
+            ry: bgH / 2,
+            fill: bgColor,
+            dirty: true,
+        })
+        this.slider.set({
+            width: slSize,
+            height: slSize,
+            rx: slSize / 2,
+            ry: slSize / 2,
+        })
 
         this.label.set({
             text: this.customProps.label,
-            fontSize: this.customProps.labelFontSize  
-        })
-
-        this.background.set({
-            fill: bgColor,
-            dirty: true
+            fontSize: this.customProps.labelFontSize,
+            fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
+            fontWeight: this.customProps.fontWeight || 'normal',
+            top: bgH / 2.2,
         })
 
         this.slider.animate('left', targetX, {

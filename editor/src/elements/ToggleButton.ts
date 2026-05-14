@@ -20,14 +20,15 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     private _state = false
     private lastClickTime = 0
 
-    constructor(canvas: fabric.Canvas, x: number, y: number) {
-        const props: ToggleProps = {
+    constructor(canvas: fabric.Canvas, x: number, y: number, propsInit: Partial<ToggleProps> = {}) {
+        const defaults: ToggleProps = {
             label: 'Slide Switch',
             labelFontSize: 14,
             fontFamily: 'Arial, sans-serif',
             fontWeight: 'normal',
             elementWidth: 60,
         }
+        const props = { ...defaults, ...propsInit }
 
         const bgW = props.elementWidth
         const bgH = Math.round(bgW * 0.5)

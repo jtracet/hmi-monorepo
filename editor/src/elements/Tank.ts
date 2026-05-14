@@ -92,7 +92,9 @@ export class Tank extends BaseElement<TankProps> {
     this.label.set({
       text: p.label, fontSize: p.labelFontSize,
       originX: 'center', originY: 'top',
-      top: H / 2, left: 0
+      top: H / 2 + 4, left: 0,
+      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
+      fontWeight: p.fontWeight ?? 'normal'
     })
 
     this.setValue(p.value)

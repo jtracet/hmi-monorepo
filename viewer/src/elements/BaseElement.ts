@@ -32,10 +32,12 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         const label = new fabric.Text('name', {
             fontSize: 14,
             fill: '#000',
+            fontFamily: (props as any)?.fontFamily ?? 'Arial, sans-serif',
+            fontWeight: (props as any)?.fontWeight ?? 'normal',
             originX: 'center',
             originY: 'top',
             left: 0,
-            top: (children[0]?.height ?? 0) / 2 + 5 
+            top: (children[0]?.height ?? 0) / 2 + 5
         })
 
         const bindIndicator = new fabric.Circle({

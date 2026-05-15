@@ -22,8 +22,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     private _state = false
     private lastClickTime = 0
 
-    constructor(canvas: fabric.Canvas, x: number, y: number) {
-        const props: ToggleProps = {
+    constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<ToggleProps> = {}) {
+        const defaults: ToggleProps = {
             label: 'Slide Switch',
             labelFontSize: 14,
             labelPosition: 'bottom',
@@ -32,8 +32,9 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             fontWeight: 'normal',
             elementWidth: 60,
         }
+        const p: ToggleProps = { ...defaults, ...props }
 
-        const bgW = props.elementWidth
+        const bgW = p.elementWidth
         const bgH = Math.round(bgW * 0.5)
         const slSize = Math.round(bgH * 0.87)
 
@@ -54,7 +55,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             selectable: false, evented: true
         })
 
-        super(canvas, x, y, [background, slider], props)
+        super(canvas, x, y, [background, slider], p)
 
         this.forEachObject(obj => {
             obj.set('evented', true)

@@ -17,23 +17,24 @@ export class LedIndicator extends BaseElement<LedProps> {
     private circle: fabric.Circle
     private _state = false
 
-    constructor(canvas: fabric.Canvas, x: number, y: number) {
-        const props: LedProps = { 
+    constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<LedProps> = {}) {
+        const defaults: LedProps = { 
             onColor: '#65d665', 
             offColor: '#d1d5db',  
             label: 'LED Indicator',
             labelFontSize: 14     
         }
+        const p: LedProps = { ...defaults, ...props }
 
         const circle = new fabric.Circle({
             radius: 15,
-            fill: props.offColor,
+            fill: p.offColor,
             strokeWidth: 1,
             originX: 'center',
             originY: 'center'
         })
 
-        super(canvas, x, y, [circle], props)
+        super(canvas, x, y, [circle], p)
 
         this.circle = circle
 

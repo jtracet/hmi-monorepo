@@ -17,11 +17,12 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     private _state = false
     private lastClickTime = 0
 
-    constructor(canvas: fabric.Canvas, x: number, y: number) {
-        const props: ToggleProps = { 
+    constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<ToggleProps> = {}) {
+        const defaults: ToggleProps = { 
             label: 'Slide Switch',
             labelFontSize: 14       
         }
+        const p: ToggleProps = { ...defaults, ...props }
 
         const background = new fabric.Rect({
             width: 60,
@@ -48,7 +49,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             evented: false  
         })
 
-        super(canvas, x, y, [background, slider], props)
+        super(canvas, x, y, [background, slider], p)
 
         this.background = background
         this.slider = slider

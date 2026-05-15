@@ -126,17 +126,6 @@ export class NumberControl extends BaseElement<NumControlProps> {
 
     super(canvas, x, y, [btnLeft, arrowLeft, border, text, btnRight, arrowRight], p)
 
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center',
-      originY: 'top',
-      top: height / 2.2,
-      left: 0,
-      fontFamily: p.fontFamily,
-      fontWeight: p.fontWeight
-    })
-
     this.txt = text
     this.border = border
     this.btnLeft = btnLeft
@@ -219,7 +208,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
     this.canvas?.requestRenderAll()
   }
 
-  updateFromProps() {
+    updateFromProps() {
     this.txt.set({
       text: String(this.customProps.value),
       fontSize: this.customProps.fontSize,
@@ -227,12 +216,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
       fontWeight: this.customProps.fontWeight || 'normal'
     })
 
-    this.label.set({
-      text: this.customProps.label,
-      fontSize: this.customProps.labelFontSize,
-      fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
-      fontWeight: this.customProps.fontWeight || 'normal'
-    })
+    this.applyLabelLayout()
 
     this.canvas?.requestRenderAll()
   }

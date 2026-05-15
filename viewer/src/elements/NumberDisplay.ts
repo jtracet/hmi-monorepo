@@ -61,15 +61,6 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
 
     super(canvas, x, y, [border, text], p)
 
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center',
-      originY: 'top',
-      top: height / 2.2,
-      left: 0
-    })
-
     this.txt = text
     this.border = border
   }
@@ -79,10 +70,7 @@ export class NumberDisplay extends BaseElement<NumDisplayProps> {
       fontSize: this.customProps.fontSize
     })
 
-    this.label.set({
-      text: this.customProps.label,
-      fontSize: this.customProps.labelFontSize
-    })
+    this.applyLabelLayout()
 
     this.canvas?.requestRenderAll()
   }

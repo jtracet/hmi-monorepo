@@ -60,15 +60,6 @@ export class GraphElement extends BaseElement<GraphProps> {
     })
 
     super(canvas, x, y, [rect, text], p)
-
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center',
-      originY: 'top',
-      top: p.height / 2 + 25,
-      left: 0,
-    })
   }
 
   setState(state: Record<string, any>) {
@@ -82,12 +73,7 @@ export class GraphElement extends BaseElement<GraphProps> {
   }
 
   updateFromProps() {
-    this.label.set({
-      text: this.customProps.label,
-      fontSize: this.customProps.labelFontSize,
-      fontFamily: this.customProps.fontFamily ?? 'Arial, sans-serif',
-      fontWeight: this.customProps.fontWeight ?? 'normal',
-    })
+    this.applyLabelLayout()
     this.canvas?.requestRenderAll()
   }
 }

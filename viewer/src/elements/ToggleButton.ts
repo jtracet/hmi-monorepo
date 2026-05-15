@@ -55,11 +55,6 @@ export class ToggleButton extends BaseElement<ToggleProps> {
 
         this.hoverCursor = 'pointer'
 
-        this.label.set({
-            text: props.label,
-            fontSize: props.labelFontSize  
-        })
-
         this.on('mouseup', () => {
             const now = Date.now()
             if (now - this.lastClickTime < 250) {
@@ -86,10 +81,7 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         const targetX = this._state ? 12 : -12
         const bgColor = this._state ? '#3b82f6' : '#d1d5db'
 
-        this.label.set({
-            text: this.customProps.label,
-            fontSize: this.customProps.labelFontSize  
-        })
+        this.applyLabelLayout()
 
         this.background.set({
             fill: bgColor,

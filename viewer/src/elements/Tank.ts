@@ -94,17 +94,6 @@ export class Tank extends BaseElement<TankProps> {
     this.valueText = valueText
     this._padding = padding
 
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center',
-      originY: 'top',
-      top: H / 2 + 10,
-      left: 0,
-      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
-      fontWeight: p.fontWeight ?? 'normal',
-    })
-
     this.setValue(p.value)
   }
 
@@ -141,13 +130,7 @@ export class Tank extends BaseElement<TankProps> {
       fontWeight: p.fontWeight ?? 'normal',
     })
 
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      top: this.H / 2 + 10,
-      fontFamily: p.fontFamily ?? 'Arial, sans-serif',
-      fontWeight: p.fontWeight ?? 'normal',
-    })
+    this.applyLabelLayout()
 
     this.updateIndicatorPosition()
     this.setValue(Number(p.value) || 0)

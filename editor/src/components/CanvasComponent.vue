@@ -331,7 +331,9 @@ function updateSelection() {
 
 function snapshot() {
   if (isSuppressed()) return
-  undoStack.push(JSON.stringify(canvas.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta'])))
+  const json = canvas.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta', 'isElementLabel'])
+  json.objects = (json.objects ?? []).filter((o: any) => !o.isElementLabel)
+  undoStack.push(JSON.stringify(json))
   if (undoStack.length > 50) undoStack.shift()
   redoStack.length = 0
 }
@@ -763,7 +765,10 @@ watch(() => canvasStore.grid.showGuides, () => drawGuides())
 // ========== PAGE SERIALIZATION ==========
 function serializePage() {
   if (!canvas) return null
-  return canvas.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta'])
+  // Exclude external label objects — they are recreated from customProps.label
+  const json = canvas.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta', 'isElementLabel'])
+  json.objects = (json.objects ?? []).filter((o: any) => !o.isElementLabel)
+  return json
 }
 
 function loadPage(canvasJson: any | null, view?: { zoom: number; offsetX: number; offsetY: number } | null) {

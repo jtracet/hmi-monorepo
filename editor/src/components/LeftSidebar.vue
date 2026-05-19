@@ -118,6 +118,7 @@ import {NButton} from 'naive-ui'
 import {fabric} from 'fabric'
 import {useCanvas, setSuppressSnapshots, resetHistory} from '../composables/useCanvas'
 import {ElementRegistry} from '../elements'
+import {getElementDisplayName} from '../elements/displayNames'
 import {useEditorStore} from '../store/editor'
 import {useCanvasStore} from '../store/canvas'
 import {usePagesStore} from '../store/pages'
@@ -135,30 +136,12 @@ const pagesStore = usePagesStore()
 const expandedCategory = ref<string | null>(null)
 const expandedSubcategory = ref<Record<string, boolean>>({})
 
-const elementDisplayNames: Record<string, string> = {
-  'led': 'LED Indicator',
-  'toggle': 'Slide Switch',
-  'image': 'Image',
-  'line': 'Line',
-  'numInput': 'Numeric Input',
-  'numControl': 'Numeric Control',
-  'numDisplay': 'Numeric Indicator',
-  'graph': 'Time Graph',
-  'tank': 'Tank',
-  'ringSelector': 'Ring Selector',
-  'decorationText': 'Decoration Text',
-}
-
 const categoryDisplayNames: Record<string, string> = {
   'numeric': 'numeric',
   'boolean': 'boolean',
   'graph': 'graph',
   'decorations': 'decorations',
   'ring': 'ring',
-}
-
-function getElementDisplayName(elementKey: string): string {
-  return elementDisplayNames[elementKey] || elementKey
 }
 
 function getCategoryDisplayName(categoryKey: string): string {

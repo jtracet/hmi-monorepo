@@ -3,7 +3,10 @@ import { BaseElement } from './BaseElement'
 
 interface ToggleProps {
     label: string
-    labelFontSize: number   
+    labelFontSize: number
+    fontFamily?: string
+    fontWeight?: string
+    elementWidth?: number
 }
 
 export class ToggleButton extends BaseElement<ToggleProps> {
@@ -20,33 +23,40 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<ToggleProps> = {}) {
         const defaults: ToggleProps = { 
             label: 'Slide Switch',
-            labelFontSize: 14       
+            labelFontSize: 14,
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'normal',
+            elementWidth: 60,
         }
-        const p: ToggleProps = { ...defaults, ...props }
+        const p = { ...defaults, ...props }
+
+        const bgW = p.elementWidth ?? 60
+        const bgH = Math.round(bgW * 0.5)
+        const slSize = Math.round(bgH * 0.87)
 
         const background = new fabric.Rect({
-            width: 60,
-            height: 30,
-            rx: 15,
-            ry: 15,
+            width: bgW,
+            height: bgH,
+            rx: bgH / 2,
+            ry: bgH / 2,
             fill: '#d1d5db',
             originX: 'center',
             originY: 'center',
             selectable: false,
-            evented: false   
+            evented: false
         })
 
         const slider = new fabric.Rect({
-            width: 26,
-            height: 26,
-            rx: 13,
-            ry: 13,
+            width: slSize,
+            height: slSize,
+            rx: slSize / 2,
+            ry: slSize / 2,
             fill: '#fff',
-            left: -15,
+            left: -Math.round(bgW * 0.2),
             originX: 'center',
             originY: 'center',
             selectable: false,
-            evented: false  
+            evented: false
         })
 
         super(canvas, x, y, [background, slider], p)
@@ -79,14 +89,28 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     }
 
     private updateVisuals() {
-        const targetX = this._state ? 12 : -12
+        const bgW = this.customProps.elementWidth ?? 60
+        const bgH = Math.round(bgW * 0.5)
+        const slSize = Math.round(bgH * 0.87)
+        const travel = Math.round(bgW * 0.2)
+        const targetX = this._state ? travel : -travel
         const bgColor = this._state ? '#3b82f6' : '#d1d5db'
 
         this.applyLabelLayout()
 
         this.background.set({
+            width: bgW,
+            height: bgH,
+            rx: bgH / 2,
+            ry: bgH / 2,
             fill: bgColor,
-            dirty: true
+            dirty: true,
+        })
+        this.slider.set({
+            width: slSize,
+            height: slSize,
+            rx: slSize / 2,
+            ry: slSize / 2,
         })
 
         this.slider.animate('left', targetX, {

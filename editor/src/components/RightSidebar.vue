@@ -1,7 +1,7 @@
 <template>
   <div v-bind="$attrs" class="w-80 bg-gray-50 border-l p-4 overflow-y-auto text-sm">
     <template v-if="sel">
-      <h2 class="font-semibold text-lg mb-3 capitalize">{{ sel.elementType }}</h2>
+      <h2 class="font-semibold text-lg mb-3">{{ displayName }}</h2>
 
       <!-- layer controls -->
       <details open class="mb-4">
@@ -244,6 +244,10 @@
       <details v-if="sel?.elementType === 'numControl'" open class="mb-4">
         <summary class="cursor-pointer font-medium mb-1">Размер</summary>
         <div class="mb-2">
+          <label class="block mb-1">Ширина</label>
+          <n-input-number v-model:value="propsProxy.elementWidth" :min="20" size="small" @update:value="applyProps" />
+        </div>
+        <div class="mb-2">
           <label class="block mb-1">Высота</label>
           <n-input-number v-model:value="propsProxy.elementHeight" :min="20" size="small" @update:value="applyProps" />
         </div>
@@ -366,6 +370,7 @@ import {
 import { ArrowUp, ArrowDown } from '@vicons/ionicons5'
 import type { fabric } from 'fabric'
 import { useSessionStore } from '../store/session'
+import { getElementDisplayName } from '../elements/displayNames'
 
 function looksLikeColor(val: any, key = ''): boolean {
   return typeof val === 'string' &&
@@ -377,6 +382,10 @@ function looksLikeColor(val: any, key = ''): boolean {
 
 const props = defineProps<{ selected: fabric.Object | null }>()
 const sel = computed(() => props.selected)
+const displayName = computed(() => {
+  const t = (sel.value as any)?.elementType
+  return t ? getElementDisplayName(t) : ''
+})
 
 const layerIndex = ref(0)
 const maxLayer = ref(0)

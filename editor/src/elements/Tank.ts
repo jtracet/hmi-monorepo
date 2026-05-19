@@ -47,7 +47,7 @@ export class Tank extends BaseElement<TankProps> {
       borderColor: '#333',
       showValue: true,
       valueFontSize: 12,
-      label: 'Tank',
+      label: 'Numeric Indicator Tank',
       labelFontSize: 14,
       labelPosition: 'bottom',
       labelVisible: true,

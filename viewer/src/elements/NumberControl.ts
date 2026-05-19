@@ -9,6 +9,8 @@ interface NumControlProps {
   labelFontSize: number
   fontFamily?: string
   fontWeight?: string
+  elementWidth: number
+  elementHeight: number
 }
 
 export class NumberControl extends BaseElement<NumControlProps> {
@@ -17,13 +19,14 @@ export class NumberControl extends BaseElement<NumControlProps> {
   static subcategory = 'controls'
   static meta = { inputs: [] as string[], outputs: ['value'] as string[] }
 
-  private readonly centerW = 80
-  private readonly elHeight = 40
+  private readonly btnW = 28
 
   private txt: fabric.Text
   private border: fabric.Rect
   private btnLeft: fabric.Rect
   private btnRight: fabric.Rect
+  private arrowLeft: fabric.Text
+  private arrowRight: fabric.Text
 
   private lastClickTime = 0
 
@@ -37,16 +40,18 @@ export class NumberControl extends BaseElement<NumControlProps> {
       value: 0,
       step: 1,
       fontSize: 18,
-      label: 'Number Control',
+      label: 'Numeric Control',
       labelFontSize: 14,
       fontFamily: 'Arial, sans-serif',
-      fontWeight: 'normal'
+      fontWeight: 'normal',
+      elementWidth: 80,
+      elementHeight: 40,
     }
     const p = { ...defaults, ...props }
 
     const btnW = 28
-    const centerW = 80
-    const height = 40
+    const centerW = p.elementWidth
+    const height = p.elementHeight
 
     const btnLeft = new fabric.Rect({
       width: btnW,
@@ -130,6 +135,8 @@ export class NumberControl extends BaseElement<NumControlProps> {
     this.border = border
     this.btnLeft = btnLeft
     this.btnRight = btnRight
+    this.arrowLeft = arrowLeft
+    this.arrowRight = arrowRight
 
     this.hoverCursor = 'pointer'
 
@@ -144,7 +151,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
       const pointer = this.canvas!.getPointer(e.e)
       const groupCenter = this.getCenterPoint()
       const localX = pointer.x - groupCenter.x
-      const halfCenter = centerW / 2
+      const halfCenter = (this.customProps.elementWidth ?? 80) / 2
 
       if (localX < -halfCenter) {
         this.customProps.value -= this.customProps.step
@@ -163,7 +170,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
       const pointer = this.canvas!.getPointer(e.e)
       const groupCenter = this.getCenterPoint()
       const localX = pointer.x - groupCenter.x
-      const halfCenter = centerW / 2
+      const halfCenter = (this.customProps.elementWidth ?? 80) / 2
 
       if (localX < -halfCenter) {
         this.btnLeft.set('fill', '#9ca3af')
@@ -187,8 +194,8 @@ export class NumberControl extends BaseElement<NumControlProps> {
 
   getInputRect(): { width: number; height: number; offsetX: number; offsetY: number } {
     return {
-      width:   this.border.width  ?? this.centerW,
-      height:  this.border.height ?? this.elHeight,
+      width:   this.border.width  ?? this.customProps.elementWidth  ?? 80,
+      height:  this.border.height ?? this.customProps.elementHeight ?? 40,
       offsetX: this.border.left   ?? 0,
       offsetY: this.border.top    ?? 0,
     }
@@ -208,7 +215,17 @@ export class NumberControl extends BaseElement<NumControlProps> {
     this.canvas?.requestRenderAll()
   }
 
-    updateFromProps() {
+  updateFromProps() {
+    const h = this.customProps.elementHeight ?? 40
+    const cw = this.customProps.elementWidth ?? 80
+    const bw = this.btnW
+
+    this.border.set({ width: cw, height: h })
+    this.btnLeft.set({ height: h, left: -(cw / 2 + bw / 2) })
+    this.btnRight.set({ height: h, left: cw / 2 + bw / 2 })
+    this.arrowLeft.set({ left: -(cw / 2 + bw / 2) })
+    this.arrowRight.set({ left: cw / 2 + bw / 2 })
+
     this.txt.set({
       text: String(this.customProps.value),
       fontSize: this.customProps.fontSize,

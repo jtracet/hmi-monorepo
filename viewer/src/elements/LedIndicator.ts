@@ -46,14 +46,6 @@ export class LedIndicator extends BaseElement<LedProps> {
 
         this.hoverCursor = 'pointer'
 
-        this.label.set({
-            text: p.label,
-            fontSize: p.labelFontSize,
-            fontFamily: p.fontFamily,
-            fontWeight: p.fontWeight,
-            top: p.radius + 5,
-        })
-
         this.on('mouseup', () => {
             this._state = !this._state
             this.updateFromProps()
@@ -62,18 +54,11 @@ export class LedIndicator extends BaseElement<LedProps> {
     }
 
     updateFromProps() {
-        const { onColor, offColor, label, labelFontSize, fontFamily, fontWeight } = this.customProps
-        const r = this.customProps.radius ?? 15
+        const { onColor, offColor } = this.customProps
 
         this.circle.set({ radius: r, fill: this._state ? onColor : offColor })
 
-        this.label.set({
-            text: label,
-            fontSize: labelFontSize,
-            top: r + 5,
-            fontFamily: fontFamily || 'Arial, sans-serif',
-            fontWeight: fontWeight || 'normal',
-        })
+        this.applyLabelLayout()
 
         this.canvas?.requestRenderAll()
     }

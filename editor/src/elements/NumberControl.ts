@@ -7,6 +7,8 @@ interface NumControlProps {
   fontSize: number
   label: string
   labelFontSize: number
+  labelPosition?: string
+  labelVisible?: boolean
   fontFamily?: string
   fontWeight?: string
   elementWidth: number
@@ -42,6 +44,8 @@ export class NumberControl extends BaseElement<NumControlProps> {
       fontSize: 18,
       label: 'Numeric Control',
       labelFontSize: 14,
+      labelPosition: 'bottom',
+      labelVisible: true,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal',
       elementWidth: 80,
@@ -55,7 +59,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
 
     const btnLeft = new fabric.Rect({
       width: btnW, height,
-      fill: '#e5e7eb', stroke: '#ccc', strokeWidth: 1,
+      fill: '#d1d5db', stroke: '#ccc', strokeWidth: 1,
       rx: 4, ry: 4,
       originX: 'center', originY: 'center',
       left: -(centerW / 2 + btnW / 2), top: 0
@@ -86,7 +90,7 @@ export class NumberControl extends BaseElement<NumControlProps> {
 
     const btnRight = new fabric.Rect({
       width: btnW, height,
-      fill: '#e5e7eb', stroke: '#ccc', strokeWidth: 1,
+      fill: '#d1d5db', stroke: '#ccc', strokeWidth: 1,
       rx: 4, ry: 4,
       originX: 'center', originY: 'center',
       left: centerW / 2 + btnW / 2, top: 0
@@ -100,13 +104,6 @@ export class NumberControl extends BaseElement<NumControlProps> {
     })
 
     super(canvas, x, y, [btnLeft, arrowLeft, border, text, btnRight, arrowRight], p)
-
-    this.label.set({
-      text: p.label, fontSize: p.labelFontSize,
-      originX: 'center', originY: 'top',
-      top: height / 2 + 4, left: 0,
-      fontFamily: p.fontFamily, fontWeight: p.fontWeight
-    })
 
     this.txt = text
     this.border = border
@@ -148,18 +145,18 @@ export class NumberControl extends BaseElement<NumControlProps> {
       const localX = pointer.x - groupCenter.x
       const halfCenter = (this.customProps.elementWidth ?? 80) / 2
       if (localX < -halfCenter) {
-        this.btnLeft.set('fill', '#d1d5db'); this.btnRight.set('fill', '#e5e7eb')
+        this.btnLeft.set('fill', '#9ca3af'); this.btnRight.set('fill', '#d1d5db')
       } else if (localX > halfCenter) {
-        this.btnRight.set('fill', '#d1d5db'); this.btnLeft.set('fill', '#e5e7eb')
+        this.btnRight.set('fill', '#9ca3af'); this.btnLeft.set('fill', '#d1d5db')
       } else {
-        this.btnLeft.set('fill', '#e5e7eb'); this.btnRight.set('fill', '#e5e7eb')
+        this.btnLeft.set('fill', '#d1d5db'); this.btnRight.set('fill', '#d1d5db')
       }
       this.canvas?.requestRenderAll()
     })
 
     this.on('mouseout', () => {
-      this.btnLeft.set('fill', '#e5e7eb')
-      this.btnRight.set('fill', '#e5e7eb')
+      this.btnLeft.set('fill', '#d1d5db')
+      this.btnRight.set('fill', '#d1d5db')
       this.canvas?.requestRenderAll()
     })
   }
@@ -200,13 +197,13 @@ export class NumberControl extends BaseElement<NumControlProps> {
     this.label.set({
       text: this.customProps.label,
       fontSize: this.customProps.labelFontSize,
-      top: h / 2 + 4,
+      left: 0,
       fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
       fontWeight: this.customProps.fontWeight || 'normal'
     })
-    this.addWithUpdate()
+    this.stableAddWithUpdate()
+    this.applyLabelLayout()
     this.setCoords()
-
     this.txt.set({
       text: String(this.customProps.value),
       fontSize: this.customProps.fontSize,
@@ -232,3 +229,6 @@ export class NumberControl extends BaseElement<NumControlProps> {
     })
   }
 }
+
+
+

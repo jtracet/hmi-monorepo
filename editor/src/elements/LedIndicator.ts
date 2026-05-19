@@ -6,6 +6,8 @@ interface LedProps {
     offColor: string
     label: string
     labelFontSize: number
+    labelPosition?: string
+    labelVisible?: boolean
     fontFamily?: string
     fontWeight?: string
     radius: number
@@ -26,11 +28,13 @@ export class LedIndicator extends BaseElement<LedProps> {
             offColor: '#d1d5db',
             label: 'LED Indicator',
             labelFontSize: 14,
+            labelPosition: 'bottom',
+            labelVisible: true,
             fontFamily: 'Arial, sans-serif',
             fontWeight: 'normal',
             radius: 15,
         }
-        const p = { ...defaults, ...props }
+        const p: LedProps = { ...defaults, ...props }
 
         const circle = new fabric.Circle({
             radius: p.radius,
@@ -44,39 +48,24 @@ export class LedIndicator extends BaseElement<LedProps> {
 
         this.circle = circle
 
-        this.label.set({
-            text: p.label,
-            fontSize: p.labelFontSize,
-            fontFamily: p.fontFamily,
-            fontWeight: p.fontWeight,
-            top: p.radius + 5,
-        })
-
         this.on('mouseup', (e) => {
             if (!this.isRuntime) return
             e.e.preventDefault()
             e.e.stopPropagation()
-        this._state = !this._state
-        this.updateVisuals()
-        this.emitState()
+            this._state = !this._state
+            this.updateVisuals()
+            this.emitState()
         })
     }
 
     updateFromProps() {
-        const { onColor, offColor, label, labelFontSize, fontFamily, fontWeight } = this.customProps
+        const { onColor, offColor } = this.customProps
         const r = this.customProps.radius ?? 15
 
         this.circle.set({ radius: r })
-        this.label.set({
-            text: label,
-            fontSize: labelFontSize,
-            top: r + 5,
-            fontFamily: fontFamily || 'Arial, sans-serif',
-            fontWeight: fontWeight || 'normal'
-        })
-        this.addWithUpdate()
+        this.stableAddWithUpdate()
+        this.applyLabelLayout()
         this.setCoords()
-        // update color after addWithUpdate to avoid label drift
         this.circle.set({ fill: this._state ? onColor : offColor })
         this.canvas?.requestRenderAll()
     }
@@ -93,8 +82,8 @@ export class LedIndicator extends BaseElement<LedProps> {
     }
 
     private emitState() {
-        this.canvas?.fire('element:output', {
-            target: this, name: 'value', value: this._state
-        })
+        this.canvas?.fire('element:output', { target: this, name: 'value', value: this._state })
     }
 }
+
+

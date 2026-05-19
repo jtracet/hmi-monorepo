@@ -24,16 +24,14 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
   static elementType = 'ringSelector'
   static category = 'ring'
   static subcategory = 'controls'
-  static meta = { inputs: ['index'], outputs: ['value'] }
+  static meta = { inputs: [], outputs: ['value'] }
 
-  private readonly btnW = 18
+  private readonly btnW = 24
 
   private txt: fabric.Text
   private border: fabric.Rect
-  private btnLeft: fabric.Rect
-  private btnRight: fabric.Rect
-  private arrowLeft: fabric.Text
-  private arrowRight: fabric.Text
+  private btnDrop: fabric.Rect
+  private arrowDrop: fabric.Text
 
   private lastClickTime = 0
 
@@ -48,8 +46,8 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
       labelFontSize: 14,
       fontFamily: 'Arial, sans-serif',
       fontWeight: 'normal',
-      fontSize: 15,
-      elementWidth: 120,
+      fontSize: 14,
+      elementWidth: 140,
       elementHeight: 36,
       selectedIndex: 0,
       items: [
@@ -68,76 +66,51 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
     }
     p.selectedIndex = Math.max(0, Math.min(p.selectedIndex, p.items.length - 1))
 
-    const btnW = 18
+    const btnW = 24
     const cw   = p.elementWidth
     const h    = p.elementHeight
-
-    const btnLeft = new fabric.Rect({
-      width: btnW, height: h,
-      fill: '#e5e7eb', stroke: '#ccc', strokeWidth: 1,
-      rx: 3, ry: 3,
-      originX: 'center', originY: 'center',
-      left: -(cw / 2 + btnW / 2), top: 0,
-    })
-
-    const arrowLeft = new fabric.Text('◀', {
-      fontSize: 9, fill: '#374151',
-      originX: 'center', originY: 'center',
-      left: -(cw / 2 + btnW / 2), top: 0,
-      selectable: false, evented: false,
-    })
 
     const border = new fabric.Rect({
       width: cw, height: h,
       fill: p.bgColor, stroke: '#ccc', strokeWidth: 1,
+      rx: 3, ry: 3,
       originX: 'center', originY: 'center',
       left: 0, top: 0,
     })
 
     const currentItem = p.items[p.selectedIndex] ?? p.items[0]
-    const text = new fabric.Text(currentItem ? String(currentItem.value) : '—', {
+    const text = new fabric.Text(currentItem?.label ?? '—', {
       fontSize: p.fontSize,
       fill: p.textColor,
-      originX: 'center', originY: 'center',
-      left: 0, top: 0,
-      textAlign: 'center',
       fontFamily: p.fontFamily,
       fontWeight: p.fontWeight,
+      originX: 'center', originY: 'center',
+      left: -(btnW / 2), top: 0,
+      textAlign: 'left',
       selectable: false, evented: false,
     })
 
-    const btnRight = new fabric.Rect({
+    const btnDrop = new fabric.Rect({
       width: btnW, height: h,
-      fill: '#e5e7eb', stroke: '#ccc', strokeWidth: 1,
+      fill: '#d1d5db', stroke: '#ccc', strokeWidth: 1,
       rx: 3, ry: 3,
       originX: 'center', originY: 'center',
-      left: cw / 2 + btnW / 2, top: 0,
+      left: cw / 2 - btnW / 2, top: 0,
     })
 
-    const arrowRight = new fabric.Text('▶', {
-      fontSize: 9, fill: '#374151',
+    const arrowDrop = new fabric.Text('▾', {
+      fontSize: 14, fill: '#374151',
       originX: 'center', originY: 'center',
-      left: cw / 2 + btnW / 2, top: 0,
+      left: cw / 2 - btnW / 2, top: 0,
       selectable: false, evented: false,
     })
 
-    super(canvas, x, y, [btnLeft, arrowLeft, border, text, btnRight, arrowRight], p)
+    super(canvas, x, y, [border, text, btnDrop, arrowDrop], p)
 
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      originX: 'center', originY: 'top',
-      top: h / 2.2, left: 0,
-      fontFamily: p.fontFamily,
-      fontWeight: p.fontWeight,
-    })
-
-    this.txt       = text
-    this.border    = border
-    this.btnLeft   = btnLeft
-    this.btnRight  = btnRight
-    this.arrowLeft  = arrowLeft
-    this.arrowRight = arrowRight
+    this.txt      = text
+    this.border   = border
+    this.btnDrop  = btnDrop
+    this.arrowDrop = arrowDrop
 
     this.hoverCursor = 'pointer'
 
@@ -147,41 +120,29 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
       this.lastClickTime = now
       e.e.preventDefault()
       e.e.stopPropagation()
-
-      const pointer = this.canvas!.getPointer(e.e)
-      const center  = this.getCenterPoint()
-      const localX  = pointer.x - center.x
-      const halfCW  = this.customProps.elementWidth / 2
-
-      if (localX < -halfCW)     this.stepIndex(-1)
-      else if (localX > halfCW) this.stepIndex(+1)
+      this.canvas?.fire('element:open-dropdown', { target: this })
     })
 
     this.on('mousemove', (e) => {
       const pointer = this.canvas!.getPointer(e.e)
       const center  = this.getCenterPoint()
       const localX  = pointer.x - center.x
-      const halfCW  = this.customProps.elementWidth / 2
-
-      this.btnLeft.set('fill',  localX < -halfCW ? '#d1d5db' : '#e5e7eb')
-      this.btnRight.set('fill', localX >  halfCW ? '#d1d5db' : '#e5e7eb')
+      const inBtn   = localX > this.customProps.elementWidth / 2 - this.btnW
+      this.btnDrop.set('fill', inBtn ? '#9ca3af' : '#d1d5db')
       this.canvas?.requestRenderAll()
     })
 
     this.on('mouseout', () => {
-      this.btnLeft.set('fill',  '#e5e7eb')
-      this.btnRight.set('fill', '#e5e7eb')
+      this.btnDrop.set('fill', '#d1d5db')
       this.canvas?.requestRenderAll()
     })
   }
 
-  private stepIndex(delta: number) {
+  selectItem(idx: number) {
     const items = this.customProps.items
     if (!items.length) return
-    let idx = this.customProps.selectedIndex + delta
-    idx = ((idx % items.length) + items.length) % items.length
-    this.customProps.selectedIndex = idx
-    this.updateFromProps()
+    this.customProps.selectedIndex = Math.max(0, Math.min(idx, items.length - 1))
+    this.updateValue()
     this.emitState()
   }
 
@@ -190,55 +151,68 @@ export class RingSelector extends BaseElement<RingSelectorProps> {
       const idx = Number(state.index)
       if (Number.isFinite(idx)) {
         this.customProps.selectedIndex = Math.max(
-          0,
-          Math.min(Math.round(idx), this.customProps.items.length - 1)
+          0, Math.min(Math.round(idx), this.customProps.items.length - 1)
         )
-        this.updateFromProps()
+        this.updateValue()
       }
     }
   }
 
-  updateFromProps() {
-    const p     = this.customProps
+  private updateValue() {
+    const p = this.customProps
     const items = p.items ?? []
-    const idx   = Math.max(0, Math.min(p.selectedIndex, items.length - 1))
-    p.selectedIndex = idx
-
-    const displayText = items[idx] ? String(items[idx].value) : '—'
-
-    const cw = p.elementWidth
-    const h  = p.elementHeight
-    const bw = this.btnW
-
-    this.border.set({ width: cw, height: h, fill: p.bgColor })
-    this.btnLeft.set({  height: h, left: -(cw / 2 + bw / 2) })
-    this.btnRight.set({ height: h, left:   cw / 2 + bw / 2  })
-    this.arrowLeft.set({  left: -(cw / 2 + bw / 2) })
-    this.arrowRight.set({ left:   cw / 2 + bw / 2  })
-
+    const idx = Math.max(0, Math.min(p.selectedIndex, items.length - 1))
+    const current = items[idx]
     this.txt.set({
-      text: displayText,
-      fontSize: p.fontSize,
+      text: current?.label ?? '—',
       fill: p.textColor,
       fontFamily: p.fontFamily || 'Arial, sans-serif',
       fontWeight: p.fontWeight || 'normal',
     })
+    this.canvas?.requestRenderAll()
+  }
 
-    this.label.set({
-      text: p.label,
-      fontSize: p.labelFontSize,
-      top: h / 2.2,
+  updateFromProps() {
+    const p   = this.customProps
+    const items = p.items ?? []
+    const idx = Math.max(0, Math.min(p.selectedIndex, items.length - 1))
+    p.selectedIndex = idx
+
+    const cw  = p.elementWidth
+    const h   = p.elementHeight
+    const bw  = this.btnW
+
+    this.border.set({ width: cw, height: h, fill: p.bgColor })
+    this.btnDrop.set({ height: h, left: cw / 2 - bw / 2 })
+    this.arrowDrop.set({ left: cw / 2 - bw / 2 })
+    this.txt.set({
+      text: items[idx]?.label ?? '—',
+      fontSize: p.fontSize,
+      fill: p.textColor,
       fontFamily: p.fontFamily || 'Arial, sans-serif',
       fontWeight: p.fontWeight || 'normal',
+      left: -(bw / 2),
     })
-
+    this.applyLabelLayout()
     this.addWithUpdate()
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
 
+  getDropdownRect(): { width: number; height: number; offsetX: number; offsetY: number } {
+    return {
+      width:   this.customProps.elementWidth,
+      height:  this.customProps.elementHeight,
+      offsetX: 0,
+      offsetY: 0,
+    }
+  }
+
   private emitState() {
     const item = this.customProps.items[this.customProps.selectedIndex]
-    this.canvas?.fire('element:output', { target: this, name: 'value', value: item?.value ?? 0 })
+    this.canvas?.fire('element:output', {
+      target: this, name: 'value', value: item?.value ?? 0,
+    })
   }
 }
+

@@ -20,17 +20,17 @@ export class ToggleButton extends BaseElement<ToggleProps> {
     private _state = false
     private lastClickTime = 0
 
-    constructor(canvas: fabric.Canvas, x: number, y: number, propsInit: Partial<ToggleProps> = {}) {
-        const defaults: ToggleProps = {
+    constructor(canvas: fabric.Canvas, x: number, y: number, props: Partial<ToggleProps> = {}) {
+        const defaults: ToggleProps = { 
             label: 'Slide Switch',
             labelFontSize: 14,
             fontFamily: 'Arial, sans-serif',
             fontWeight: 'normal',
             elementWidth: 60,
         }
-        const props = { ...defaults, ...propsInit }
+        const p = { ...defaults, ...props }
 
-        const bgW = props.elementWidth ?? 60
+        const bgW = p.elementWidth ?? 60
         const bgH = Math.round(bgW * 0.5)
         const slSize = Math.round(bgH * 0.87)
 
@@ -59,20 +59,12 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             evented: false
         })
 
-        super(canvas, x, y, [background, slider], props)
+        super(canvas, x, y, [background, slider], p)
 
         this.background = background
         this.slider = slider
 
         this.hoverCursor = 'pointer'
-
-        this.label.set({
-            text: props.label,
-            fontSize: props.labelFontSize,
-            fontFamily: props.fontFamily,
-            fontWeight: props.fontWeight,
-            top: bgH / 2.2,
-        })
 
         this.on('mouseup', () => {
             const now = Date.now()
@@ -104,6 +96,8 @@ export class ToggleButton extends BaseElement<ToggleProps> {
         const targetX = this._state ? travel : -travel
         const bgColor = this._state ? '#3b82f6' : '#d1d5db'
 
+        this.applyLabelLayout()
+
         this.background.set({
             width: bgW,
             height: bgH,
@@ -117,14 +111,6 @@ export class ToggleButton extends BaseElement<ToggleProps> {
             height: slSize,
             rx: slSize / 2,
             ry: slSize / 2,
-        })
-
-        this.label.set({
-            text: this.customProps.label,
-            fontSize: this.customProps.labelFontSize,
-            fontFamily: this.customProps.fontFamily || 'Arial, sans-serif',
-            fontWeight: this.customProps.fontWeight || 'normal',
-            top: bgH / 2.2,
         })
 
         this.slider.animate('left', targetX, {

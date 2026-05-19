@@ -24,7 +24,7 @@
         <!-- explicit label + label font size editor (shows only if element supports label) -->
         <div v-if="propsProxy.label !== undefined" class="mb-3">
           <label class="block mb-1">Label</label>
-          <n-input v-model:value="propsProxy.label" size="small" @update:value="applyProps" />
+          <n-input v-model:value="propsProxy.label" size="small" @update:value="applyLabelOnly" />
 
           <label class="block mb-1 mt-2">Label font size</label>
           <n-input-number
@@ -32,8 +32,28 @@
             :min="6"
             :max="48"
             size="small"
-            @update:value="applyProps"
+            @update:value="applyLabelOnly"
           />
+
+          <div class="flex items-center gap-3 mt-2">
+            <div class="flex-1">
+              <label class="block mb-1">Позиция метки</label>
+              <n-select
+                v-model:value="propsProxy.labelPosition"
+                :options="[{label:'Снизу',value:'bottom'},{label:'Сверху',value:'top'}]"
+                size="small"
+                @update:value="applyLabelOnly"
+              />
+            </div>
+            <div class="flex items-center gap-1 mt-4">
+              <n-switch
+                v-model:value="propsProxy.labelVisible"
+                size="small"
+                @update:value="applyLabelOnly"
+              />
+              <span class="text-xs text-gray-500">Видна</span>
+            </div>
+          </div>
         </div>
 
         <!-- Шрифт и жирность (специальные поля) -->
@@ -344,7 +364,8 @@ import {
   NSelect,
   NIcon,
   NInputNumber,
-  NColorPicker
+  NColorPicker,
+  NSwitch
 } from 'naive-ui'
 import { ArrowUp, ArrowDown } from '@vicons/ionicons5'
 import type { fabric } from 'fabric'
@@ -456,6 +477,14 @@ function applyProps() {
   sel.value.canvas?.requestRenderAll()
 }
 
+// Updates only label text/position/visibility — no addWithUpdate, no bounding box change
+function applyLabelOnly() {
+  if (!sel.value) return
+  sel.value.customProps = { ...propsProxy }
+  ;(sel.value as any).applyLabelLayout?.()
+  sel.value.canvas?.requestRenderAll()
+}
+
 function addRingItem() {
   if (!propsProxy.items) propsProxy.items = []
   const items = propsProxy.items as any[]
@@ -479,6 +508,8 @@ const filteredKeys = computed(() =>
   Object.keys(propsProxy).filter(k => 
     k !== 'label' && 
     k !== 'labelFontSize' && 
+    k !== 'labelPosition' &&
+    k !== 'labelVisible' &&
     k !== 'fontFamily' && 
     k !== 'fontWeight' &&
     k !== 'elementWidth' &&
@@ -542,10 +573,19 @@ watch(bindings, () => {
     }
 }, { deep: true })
 
-watch(propsProxy, () => {
+watch(propsProxy, (newVal, oldVal) => {
   if (isLoadingProps) return
-  if (sel.value && typeof (sel.value as any).updateFromProps === 'function') {
-    sel.value.customProps = { ...propsProxy }
+  if (!sel.value || typeof (sel.value as any).updateFromProps !== 'function') return
+
+  // If only label-related props changed — use applyLabelOnly (no addWithUpdate)
+  const labelKeys = new Set(['label', 'labelFontSize', 'labelPosition', 'labelVisible'])
+  const changedKeys = Object.keys(newVal).filter(k => newVal[k] !== oldVal?.[k])
+  const onlyLabelChanged = changedKeys.length > 0 && changedKeys.every(k => labelKeys.has(k))
+
+  sel.value.customProps = { ...propsProxy }
+  if (onlyLabelChanged) {
+    ;(sel.value as any).applyLabelLayout?.()
+  } else {
     ;(sel.value as any).updateFromProps()
   }
 }, { deep: true })

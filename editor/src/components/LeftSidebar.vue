@@ -222,7 +222,8 @@ function doSave() {
   if (!canvas.value) return
 
   // Save current page state first
-  const currentCanvasJson = canvas.value.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta'])
+  const currentCanvasJson = canvas.value.toJSON(['id', 'customProps', 'elementType', 'bindings', 'meta', 'isElementLabel'])
+  currentCanvasJson.objects = (currentCanvasJson.objects ?? []).filter((o: any) => !o.isElementLabel)
   const currentView = canvasStore.serializeView()
   pagesStore.saveCurrentPageState(currentCanvasJson, currentView)
 

@@ -55,10 +55,8 @@ export class DecorationText extends BaseElement<DecorationTextProps> {
       strokeWidth: p.borderWidth,
       rx: p.borderRadius,
       ry: p.borderRadius,
-      originX: 'center',
-      originY: 'center',
-      left: 0,
-      top: 0,
+      originX: 'center', originY: 'center',
+      left: 0, top: 0,
     })
 
     const txt = new fabric.Text(p.text, {
@@ -66,22 +64,16 @@ export class DecorationText extends BaseElement<DecorationTextProps> {
       fill: p.textColor,
       fontFamily: p.fontFamily,
       fontWeight: p.fontWeight,
-      originX: 'center',
-      originY: 'center',
-      left: 0,
-      top: 0,
+      originX: 'center', originY: 'center',
+      left: 0, top: 0,
       textAlign: p.textAlign as any,
-      selectable: false,
-      evented: false,
+      selectable: false, evented: false,
     })
 
-    // Pass showBindIndicator: false — decorations don't need the binding dot
     super(canvas, x, y, [box, txt], p, { showBindIndicator: false })
 
-    // The inherited label sits below the main rect. We don't need it here —
-    // hide it visually and keep it at a neutral position so it never
-    // contributes to bounding-box calculations.
-    this.label.set({ text: ' ', fontSize: 1, opacity: 0, top: 0, left: 0 })
+    // Hide the external label — DecorationText has no label
+    this.label.set({ opacity: 0, text: ' ' })
 
     this.box = box
     this.txt = txt
@@ -109,13 +101,9 @@ export class DecorationText extends BaseElement<DecorationTextProps> {
       textAlign: p.textAlign as any,
     })
 
-    // Keep label neutral — single space, size 1, at group center.
-    // This way addWithUpdate() sees it as a 1px dot at (0,0) and
-    // the bounding box is determined entirely by box + txt.
-    this.label.set({ text: ' ', fontSize: 1, top: 0, left: 0 })
-
-    this.addWithUpdate()
+    this.stableAddWithUpdate()
     this.setCoords()
     this.canvas?.requestRenderAll()
   }
 }
+

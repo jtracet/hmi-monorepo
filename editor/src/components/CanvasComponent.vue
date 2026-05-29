@@ -313,15 +313,37 @@ function getGraphStyle(obj: any) {
   if (!canvas) return { position: 'absolute', left: '0px', top: '0px', width: '0px', height: '0px' }
   const zoom = canvas.getZoom()
   const vpt = canvas.viewportTransform ?? [1, 0, 0, 1, 0, 0]
-  const screenLeft = obj.left * zoom + vpt[4]
-  const screenTop  = obj.top  * zoom + vpt[5]
-  const screenW    = obj.width  * (obj.scaleX ?? 1) * zoom
-  const screenH    = obj.height * (obj.scaleY ?? 1) * zoom
-  return { position: 'absolute', left: screenLeft + 'px', top: screenTop + 'px', width: screenW + 'px', height: screenH + 'px' }
+
+  const m = obj.calcTransformMatrix()
+  const { scaleX, scaleY } = fabric.util.qrDecompose(m)
+  const absW = (obj.width ?? 0) * Math.abs(scaleX)
+  const absH = (obj.height ?? 0) * Math.abs(scaleY)
+  const sceneLeft = m[4] - absW / 2
+  const sceneTop  = m[5] - absH / 2
+  const screenLeft = sceneLeft * zoom + vpt[4]
+  const screenTop  = sceneTop  * zoom + vpt[5]
+  return { position: 'absolute', left: screenLeft + 'px', top: screenTop + 'px', width: absW * zoom + 'px', height: absH * zoom + 'px' }
 }
 
 function getGraphValue(g: any): number {
   return typeof g.getCurrentValue === 'function' ? g.getCurrentValue() : 0
+}
+
+function collectGraphIds(target: any): string[] {
+  if (!target) return []
+  if (target.elementType === 'time-graph' && target.id) return [target.id]
+  if (typeof target.getObjects === 'function') {
+    return target.getObjects()
+      .filter((o: any) => o.elementType === 'time-graph' && o.id)
+      .map((o: any) => o.id)
+  }
+  return []
+}
+
+function syncTargetLabels(target: any) {
+  if (!target) return
+  const objs = typeof target.getObjects === 'function' ? target.getObjects() : [target]
+  objs.forEach((o: any) => { if (typeof o.syncLabel === 'function') o.syncLabel() })
 }
 
 function updateSelection() {
@@ -710,14 +732,16 @@ onMounted(() => {
   canvas.on('object:removed', updateGraphs)
   canvas.on('object:moving', handleObjectMoving)
   canvas.on('object:moving', (e: fabric.IEvent<Event>) => {
-    const obj = e.target as any
-    if (obj?.elementType === 'time-graph' && obj.id) movingGraphIds.value = new Set([...movingGraphIds.value, obj.id])
+    const ids = collectGraphIds(e.target)
+    if (ids.length) movingGraphIds.value = new Set([...movingGraphIds.value, ...ids])
+    syncTargetLabels(e.target)
   })
   canvas.on('object:scaling', (e: fabric.IEvent<Event>) => {
-    const obj = e.target as any
-    if (obj?.elementType === 'time-graph' && obj.id) movingGraphIds.value = new Set([...movingGraphIds.value, obj.id])
+    const ids = collectGraphIds(e.target)
+    if (ids.length) movingGraphIds.value = new Set([...movingGraphIds.value, ...ids])
+    syncTargetLabels(e.target)
   })
-  canvas.on('object:modified', () => { movingGraphIds.value = new Set(); updateGraphs() })
+  canvas.on('object:modified', (e: fabric.IEvent<Event>) => { syncTargetLabels(e.target); movingGraphIds.value = new Set(); updateGraphs() })
   canvas.on('mouse:up', () => { if (movingGraphIds.value.size > 0) { movingGraphIds.value = new Set(); updateGraphs() } })
   canvas.on('mouse:wheel', handleWheel)
   canvas.on('after:render', () => { updateGridBackground(); drawGuides(); refreshInlinePosition(); graphsVersion.value++ })

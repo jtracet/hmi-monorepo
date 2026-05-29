@@ -133,15 +133,15 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
     }
 
     // ── label sync ────────────────────────────────────────────────────────
-    // Uses this.height (actual group bounding box) so it works correctly
-    // for all elements regardless of their internal child layout.
+    syncLabel() {
+        this._syncLabelPosition()
+    }
+
     private _syncLabelPosition() {
         if (!this.label) return
         const p       = this.customProps as any
         const visible = p.labelVisible !== false
         const pos     = p.labelPosition ?? 'bottom'
-        const center  = this.getCenterPoint()
-        const halfH   = (this.height ?? 0) / 2
         const gap     = this._labelGap
 
         if (!visible) {
@@ -150,19 +150,25 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
             return
         }
 
+        const m = this.calcTransformMatrix()
+        const { scaleY } = fabric.util.qrDecompose(m)
+        const centerX = m[4]
+        const centerY = m[5]
+        const halfH   = ((this.height ?? 0) * Math.abs(scaleY)) / 2
+
         if (pos === 'top') {
             this.label.set({
                 opacity: 1,
                 originY: 'bottom',
-                left: center.x,
-                top:  center.y - halfH - gap,
+                left: centerX,
+                top:  centerY - halfH - gap,
             })
         } else {
             this.label.set({
                 opacity: 1,
                 originY: 'top',
-                left: center.x,
-                top:  center.y + halfH + gap,
+                left: centerX,
+                top:  centerY + halfH + gap,
             })
         }
         this.label.setCoords()

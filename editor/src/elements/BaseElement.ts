@@ -43,7 +43,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         if (showIndicator) {
             bindIndicator = new fabric.Circle({
                 radius: 6,
-                fill: '#019610',
+                fill: '#dc2626',
                 stroke: '#ffffff',
                 strokeWidth: 1,
                 originX: 'right',
@@ -52,7 +52,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
                 top: -(children[0]?.height ?? 30) / 2,
                 selectable: false,
                 evented: false,
-                visible: false,
+                visible: true,
                 shadow: new fabric.Shadow({
                     color: 'rgba(0,0,0,0.3)',
                     blur: 3,
@@ -226,7 +226,7 @@ export abstract class BaseElement<TProps = Record<string, any>> extends fabric.G
         const hasAny =
             Object.values(this._bindings.inputs ).some(v => v?.trim()) ||
             Object.values(this._bindings.outputs).some(v => v?.trim())
-        this.bindIndicator.set('visible', hasAny)
+        this.bindIndicator.set('visible', !hasAny)
         this.canvas?.requestRenderAll()
     }
 
